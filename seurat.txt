@@ -1,0 +1,3100 @@
+###v5
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(clustree)
+library(BiocParallel)
+library(BPCells)
+library(ggplot2)
+register(BPPARAM = MulticoreParam(workers = 6))
+options(future.globals.maxSize = 1e9)
+merged[["RNA5"]] <- as(object = merged[["RNA"]], Class = "Assay5")
+DefaultAssay(merged)
+Assays(merged)
+merged[["RNA_seuratv4"]] <-  merged[['RNA']]
+merged[['RNA']]=merged[['RNA5']]
+merged <- NormalizeData(merged)
+merged <- FindVariableFeatures(merged)
+merged <- SketchData(merged,
+                     ncells = 50000,
+                     method = "LeverageScore",
+                     sketched.assay = "sketch"
+)
+DefaultAssay(merged) <- "sketch"
+merged <- NormalizeData(merged)
+merged <- FindVariableFeatures(merged)
+merged <- ScaleData(merged)
+merged <- RunPCA(merged)
+##harmony
+library(harmony)
+system.time({merged <- RunHarmony(merged, group.by.vars = "orig.ident")})
+merged <- RunUMAP(merged, reduction = "harmony", dims = 1:30)
+merged <- FindNeighbors(merged, reduction = "harmony", dims = 1:30)
+merged <- FindClusters(merged, resolution = 0.01)
+DimPlot(merged, reduction = "umap", label=T)
+DimPlot(merged, reduction = "umap", group.by='orig.ident')
+merged <- ProjectIntegration(merged, sketched.assay = "sketch", assay = "RNA", reduction = "harmony")
+merged <- ProjectData(merged, sketched.assay = "sketch", assay = "RNA", sketched.reduction = "harmony.full",
+                      full.reduction = "harmony.full", dims = 1:30)
+DimPlot(merged, label = T, label.size = 3, reduction = "umap")
+DimPlot(merged, label = F, label.size = 3, reduction = "umap", group.by = "orig.ident")
+saveRDS(pbmc, file = "lung.rds")
+
+
+markers <- FindAllMarkers(sc, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+
+markers<- markers %>% filter(!grepl('ENS',rownames(markers)))
+markers<- markers %>% filter(!grepl('LOC',rownames(markers)))
+top10 <- markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+top20 <- markers %>% group_by(cluster) %>% top_n(n = 20, wt = avg_log2FC)
+
+bubble_data=DotPlot(c1,features = unique(top20$gene)) #提取数据的简单方法
+bubble_data=bubble_data$data
+
+bubble_data%>%ggplot(aes(x=id,y=features.plot,fill=avg.exp.scaled))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "#0851fa",mid = "#f8fbfb",high = "#fc0301")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.y.left = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+new.cluster.ids <- c("Naive CD4 T", "Memory CD4 T", "CD14+ Mono", "B", "CD8 T", "FCGR3A+ Mono", "NK", "DC", "Platelet")
+names(new.cluster.ids) <- levels(pbmc)
+pbmc <- RenameIdents(pbmc, new.cluster.ids)
+
+c2  <- NormalizeData(c2, normalization.method = "LogNormalize", scale.factor = 10000) %>% FindVariableFeatures(selection.method = "vst", nfeatures = 2000) %>% ScaleData() %>% RunPCA(verbose=FALSE)
+c2 <- RunUMAP(c2, reduction = "harmony", dims = 1:30)
+c2 <- FindNeighbors(c2, reduction = "harmony", dims = 1:30)
+c2 <- FindClusters(c2, resolution = 1)
+DimPlot(c2, reduction = "umap", label=T)
+
+saveRDS(c1,file = 'c1.rds')
+cellinfo<-as.data.frame(c1@active.ident)
+saveRDS(cellinfo,file = 'c1_cell.rds')
+
+##抽样50000放在内存里
+merged <- SketchData(
+  mergedect = merged,
+  ncells = 50000,
+  method = "LeverageScore",
+  sketched.assay = "sketch"
+)
+merged
+# switch to analyzing the full dataset (on-disk)
+DefaultAssay(merged) <- "RNA"
+# switch to analyzing the sketched dataset (in-memory)
+DefaultAssay(merged) <- "sketch"
+
+merged <- FindVariableFeatures(merged)
+merged <- ScaleData(merged)
+merged <- RunPCA(merged)
+merged <- FindNeighbors(merged, dims = 1:50)
+merged <- FindClusters(merged, resolution = 2)
+merged <- RunUMAP(merged, dims = 1:50, return.model = T)
+DimPlot(merged, label = T, label.size = 3, reduction = "umap") + NoLegend()
+##抽样扩展到全部数据
+merged <- ProjectData(merged,
+  assay = "RNA",
+  full.reduction = "pca.full",
+  sketched.assay = "sketch",
+  sketched.reduction = "pca",
+  umap.model = "umap",
+  dims = 1:50,
+  refdata = list(cluster_full = "seurat_clusters")
+)
+# now that we have projected the full dataset, switch back to analyzing all cells
+DefaultAssay(merged) <- "RNA"
+DimPlot(merged, label = T, label.size = 3, reduction = "umap", group.by = "cluster_full", alpha = 0.1)
+saveRDS(pbmc, file = "plain_sn_lung_2.rds")
+
+
+##cellratio
+lung_lung<-subset(lung,idents = c('plain','1wk','2wk','3wk','8 mon','Tibetan'))
+lung_young<-subset(lung,idents = c('plain_young','8 mon_young','Tibetan_young'))
+lung_lung$time<-lung_lung@active.ident
+Idents(lung_lung)<-lung_lung$cluster_full
+Cellratio <- prop.table(table(Idents(lung_lung), lung_lung$time), margin = 2)
+Cellratio <- as.data.frame(Cellratio)
+Cellratio$Var2<-factor(Cellratio$Var2, levels = c('plain','1wk','2wk','3wk','8 mon','Tibetan'))
+ggplot(Cellratio) +
+  geom_bar(aes(x =Var2, y= Freq, fill = Var1),stat = "identity",width = 0.8,size = 0.5)+
+  theme_classic() +
+  labs(x='Sample',y = 'Ratio')+
+  theme(panel.border = element_rect(fill=NA, size=0.5, linetype="solid"))+scale_fill_manual(values = lung_cell$col)
+end<-subset(Cellratio,Cellratio$Var1%in%c('Capillaries endothelial','Lymphatic endothelial'))
+ggplot(end, aes(x = Var2, y = Freq,  color = Var1,group=Var1)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept=0), alpha = 0.65)+scale_color_manual(values=c('#f5e091','#f3cb45'))+theme_classic()
+
+
+##go
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(clusterProfiler)
+library(DOSE)
+library(org.Hs.eg.db)
+library(aPEAR)
+df<-as.data.frame(table(lung_cell_marker$cluster))
+df<-as.character(df$Var1)
+t<-list()
+gene<-list()
+go<-list()
+library(stringr)
+ego<-list()
+for (i in 1:length(df)) {
+  t[[i]]<-subset(lung_cell_marker,lung_cell_marker$cluster%in%df[[i]])
+  gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                        keys = t[[i]]$gene,
+                                                        columns = 'ENTREZID',
+                                                        keytype = 'SYMBOL')[,2]))
+  go[[i]] <- enrichGO(gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+  ego[[i]] <- simplify(go[[i]], cutoff=0.7, by="p.adjust", select_fun=min)
+  go[[i]]=DOSE::setReadable(go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+  ego[[i]]=DOSE::setReadable(ego[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+
+}
+
+
+
+lung$time<-gsub("8 mon",'mon8',lung$time)
+lung$time<-factor(lung$time,levels = c('plain','1wk','2wk','3wk','mon8','Tibetan'))
+data<-AverageExpression(lung,assays = 'RNA',group.by = 'time')
+data<-data[["RNA"]]
+data<-as.matrix(data)
+marker_exp <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(marker_exp)
+up<-subset(t,plain<g1wk & g1wk<g2wk&g2wk<g3wk&g3wk<mon8&g3wk&mon8<Tibetan)
+up<- up %>% filter(!grepl('LOC',rownames(up)))
+up<-as.matrix(up,cluster_rows = F,cluster_columns = F)
+Heatmap(up)
+down<-subset(data,plain>g1wk & g1wk>g2wk&g2wk>g3wk&g3wk>mon8&g3wk&mon8>Tibetan)
+down<- down %>% filter(!grepl('LOC',rownames(down)))
+down<-as.matrix(down)
+Heatmap(down,cluster_rows = F,cluster_columns = F)
+
+##ENDMT SCP
+ht <- DynamicHeatmap(
+  srt = mt, lineages = c("Lineage1"),
+  use_fitted = TRUE, n_split = 5, reverse_ht = "Lineage1",
+  species = "Homo_sapiens",min_expcells = 1,r.sq = 0.05,
+  dev.expl = 0.05,
+  heatmap_palette = "viridis", cell_annotation = "cell",
+  separate_annotation_palette = c("Paired", "Set1"),
+  feature_annotation_palcolor = list(c("gold", "steelblue"), c("forestgreen")),
+  pseudotime_label = 25, pseudotime_label_color = "red",
+  height = 5, width = 2
+)
+##mic SCP
+ht <- DynamicHeatmap(
+  srt = mic, lineages = c("Lineage1"),
+  use_fitted = TRUE, n_split = 5, reverse_ht = "Lineage1",
+  species = "Homo_sapiens",min_expcells = 1,r.sq = 0.05,
+  dev.expl = 0.01,
+  heatmap_palette = "viridis", cell_annotation = "celltype",
+  separate_annotation_palette = c("Paired", "Set1"),
+  feature_annotation_palcolor = list(c("gold", "steelblue"), c("forestgreen")),
+  pseudotime_label = 25,
+  height = 5, width = 2
+)
+
+###figure2 mfuzz
+##mfuzz
+lung$time<-gsub("8 mon",'mon8',lung$time)
+lung$time<-factor(lung$time,levels = c('plain','1wk','2wk','3wk','mon8','Tibetan'))
+data<-AverageExpression(lung,assays = 'RNA',group.by = 'time')
+data<-data[["RNA"]]
+data<-as.matrix(data)
+library(Mfuzz)
+data<-as.matrix(data)
+eset <- new("ExpressionSet",exprs = data)
+eset <- filter.std(eset,min.std=0)
+eset  <- filter.NA(eset , thres = 0.25)
+eset  <- fill.NA(eset , mode = 'mean')
+eset <- standardise(eset)
+set.seed(123)
+c <- 12##上述确定的聚类个数
+m <- mestimate(eset) #  评估出最佳的m值
+cl <- mfuzz(eset, c = c, m = m)
+##可视化
+library(RColorBrewer)
+#color.2 <- colorRampPalette(rev(c("#ff0000", "Yellow", "OliveDrab1")))(1000)
+color.2 <- colorRampPalette(rev(c("#D73027", "#FAD1AC", "#ABD9E9")))(1000)
+mfuzz.plot(eset,cl,mfrow=c(3,4),
+           new.window= FALSE,
+           time.labels= colnames(eset) ,
+           colo = color.2)
+gene_cluster <- cl$cluster
+gene_cluster <- cbind(data[names(gene_cluster), ], gene_cluster)
+write.csv(gene_cluster,file = 'number16.csv')
+##go
+t<-list()
+gene<-list()
+go<-list()
+library(stringr)
+ego<-list()
+h<-list()
+o<-list()
+df<-as.character(c(1:10))
+for (i in 1:length(df)) {
+  t[[i]]<-subset(lung_c10,lung_c10$gene_cluster%in%df[[i]])
+  gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                        keys = t[[i]]$...1,
+                                                        columns = 'ENTREZID',
+                                                        keytype = 'SYMBOL')[,2]))
+  go[[i]] <- enrichGO(gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+  go[[i]]=DOSE::setReadable(go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+  ego[[i]]<-subset(go[[i]]@result,go[[i]]@result$pvalue<0.05)
+  ego[[i]]$class<-df[[i]]
+  h[[i]] <- ego[[i]][grepl("hypoxia", ego[[i]]$Description, ignore.case = TRUE), ]
+  o[[i]] <- ego[[i]][grepl("oxygen", ego[[i]]$Description, ignore.case = TRUE), ]
+}
+all<-rbind(h[[1]],h[[2]],h[[3]],h[[4]],h[[5]],h[[6]],h[[7]],h[[8]],h[[9]],o[[1]],o[[2]],o[[3]],o[[4]],o[[5]],o[[6]],o[[7]],o[[8]],o[[9]])
+c6<-subset(all,all$class%in%6)
+c6$Description<-gsub(" ","_",c6$Description)
+df<-as.character(c6$Description)
+c6$Description <- paste(c6$Description, "1", sep="")
+dff<-as.character(c6$Description)
+DefaultAssay(lung)<-'RNA'
+gene_list <- strsplit(c6$geneID, "/")
+gene<-list()
+cc<-as.character(c(1:8))
+for (i in 1:length(cc)) {
+  gene[[i]]<-list(gene_list[[i]])
+}
+lung<-AddModuleScore(lung,features = gene[[1]],name = 'response_to_hypoxia')
+lung<-AddModuleScore(lung,features = gene[[2]],name = 'response_to_decreased_oxygen_levels')
+lung<-AddModuleScore(lung,features = gene[[3]],name = 'response_to_oxygen_levels')
+lung<-AddModuleScore(lung,features = gene[[4]],name = 'regulation_of_reactive_oxygen_species_biosynthetic_process')
+lung<-AddModuleScore(lung,,features = gene[[5]],name = 'regulation_of_reactive_oxygen_species_metabolic_process')
+lung<-AddModuleScore(lung,features = gene[[6]],name = 'reactive_oxygen_species_biosynthetic_process')
+lung<-AddModuleScore(lung,features = gene[[7]],name = 'positive_regulation_of_reactive_oxygen_species_biosynthetic_process')
+lung<-AddModuleScore(lung,features = gene[[8]],name = 'lipoxygenase_pathway')
+a<-list()
+z<-list()
+all<-data.frame()
+for (i in 1:length(dff)) {
+  a[[i]]=VlnPlot(lung,dff[[i]])
+  a[[i]]<-a[[i]]$data
+  a[[i]]$class<-dff[[i]]
+  colnames(a[[i]])<-c('dff','ident','class')
+  z[[i]] = aggregate(a[[i]]$dff,list(a[[i]]$ident),median)
+  z[[i]]$class<-dff[[i]]
+  all<-rbind(all,z[[i]])
+}
+library(tidyr)
+data_wide <- spread(all, key = Group.1, value = x)
+df<-data_wide$class
+data_wide$class<-NULL
+rownames(data_wide)<-df
+library(ComplexHeatmap)
+Heatmap(data_wide)
+
+###Figure3A
+d<-as.data.frame(table(lung@active.ident))
+df<-as.character(d$Var1)
+a <- list()
+ad6_pa <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    a[[i]] <- FindMarkers(lung, ident.1 = "1wk", ident.2 = "plain", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    a[[i]]$class <- df[[i]]
+    ad6_pa <- rbind(ad6_pa, a[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+b <- list()
+ad14_ad6 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    b[[i]] <- FindMarkers(lung, ident.1 = "2wk", ident.2 = "1wk", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    b[[i]]$class <- df[[i]]
+    ad14_ad6 <- rbind(ad14_ad6, b[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+c <- list()
+ad21_ad14 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    c[[i]] <- FindMarkers(lung, ident.1 = "3wk", ident.2 = "2wk", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    c[[i]]$class <- df[[i]]
+    ad21_ad14 <- rbind(ad21_ad14, c[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+d <- list()
+sa_ad21 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    d[[i]] <- FindMarkers(lung, ident.1 = "8 mon", ident.2 = "plain", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    d[[i]]$class <- df[[i]]
+    sa_ad21 <- rbind(sa_ad21, d[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+ad6_pa<-subset(ad6_pa,ad6_pa$p_val_adj<0.05)
+ad14_ad6<-subset(ad14_ad6,ad14_ad6$p_val_adj<0.05)
+ad21_ad14<-subset(ad21_ad14,ad21_ad14$p_val_adj<0.05)
+sa_ad21<-subset(sa_ad21,sa_ad21$p_val_adj<0.05)
+
+ad6_pa_up<-subset(ad6_pa,ad6_pa$avg_log2FC>0)
+ad14_ad6_up<-subset(ad14_ad6,ad14_ad6$avg_log2FC>0)
+ad21_ad14_up<-subset(ad21_ad14,ad21_ad14$avg_log2FC>0)
+sa_ad21_up<-subset(sa_ad21,sa_ad21$avg_log2FC>0)
+
+ad6_pa_down<-subset(ad6_pa,ad6_pa$avg_log2FC<0)
+ad14_ad6_down<-subset(ad14_ad6,ad14_ad6$avg_log2FC<0)
+ad21_ad14_down<-subset(ad21_ad14,ad21_ad14$avg_log2FC<0)
+sa_ad21_down<-subset(sa_ad21,sa_ad21$avg_log2FC<0)
+
+wk1_p_up<-as.data.frame(table(ad6_pa_up$class))
+wk2_wk1_up<-as.data.frame(table(ad14_ad6_up$class))
+wk3_wk2_up<-as.data.frame(table(ad21_ad14_up$class))
+mon8_wk3_up<-as.data.frame(table(sa_ad21_up$class))
+
+wk1_p_down<-as.data.frame(table(ad6_pa_down$class))
+wk2_wk1_down<-as.data.frame(table(ad14_ad6_down$class))
+wk3_wk2_down<-as.data.frame(table(ad21_ad14_down$class))
+mon8_wk3_down<-as.data.frame(table(sa_ad21_down$class))
+
+wk1_p_up$class<-'wk1_p_up'
+wk2_wk1_up$class<-'wk2_wk1_up'
+wk3_wk2_up$class<-'wk3_wk2_up'
+mon8_wk3_up$class<-'mon8_wk3_up'
+
+wk1_p_down$class<-'wk1_p_down'
+wk2_wk1_down$class<-'wk2_wk1_down'
+wk3_wk2_down$class<-'wk3_wk2_down'
+mon8_wk3_down$class<-'mon8_wk3_down'
+
+up<-rbind(wk1_p_up,wk2_wk1_up,wk3_wk2_up,mon8_wk3_up)
+up$df<-'+'
+up<-tidyr::unite(up, "Var1", Var1, df)
+up$Freq<-log2(up$Freq)
+down<-rbind(wk1_p_down,wk2_wk1_down,wk3_wk2_down,mon8_wk3_down)
+down$Freq<-log2(down$Freq)
+down$df<-'-'
+down<-tidyr::unite(down, "Var1", Var1, df)
+result_up <- up %>%
+  group_by(Var1) %>%
+  summarise(Freq_sum = sum(Freq, na.rm = TRUE)) %>%
+  arrange(desc(Freq_sum))
+
+result_down <- down %>%
+  group_by(Var1) %>%
+  summarise(Freq_sum = sum(Freq, na.rm = TRUE)) %>%
+  arrange(desc(Freq_sum))
+
+write.csv(down,file = 'lung_down.csv')
+write.csv(result_down,file = 'lung_down_sort.csv')
+write.csv(up,file = 'lung_up.csv')
+write.csv(result_up,file = 'lung_up_sort.csv')
+
+up$cell<-factor(up$cell,levels = up_sort$cell)
+up$class<-factor(up$class,levels = c('wk1_p_up','wk2_wk1_up','wk3_wk2_up','mon8_wk3_up'))
+ggplot(up, aes(x = cell, y = Freq, color=class)) + geom_point(aes(size = abs(Freq)))+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 90,vjust = 1,hjust = 1,size = 10,color="black"),
+  )+scale_color_manual(values = c('#9bd9ff','#fbceab','#ff999a','#c79bf1'))
+
+
+class_means <- aggregate(Freq ~ Var1, data = all, FUN = mean)
+class_means_sorted <- class_means[order(-class_means$Freq), ]
+all$Var1<-factor(all$Var1,levels = class_means_sorted$Var1)
+ggplot(all, aes(x = cell, y = Freq, color=class)) + geom_point(aes(size = abs(Freq)))+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 90,vjust = 1,hjust = 1,size = 10,color="black"),
+  )+scale_color_manual(values = c('#9bd9ff','#9bd9ff','#ff999a','#ff999a','#c79bf1','#c79bf1','#fbceab','#fbceab','#ff9ccd','#ff9ccd'))
+barplot(rep(1,times=112),col=class$col,border=class$col,main="Heat.Colors10",axes=F,space=0)
+
+#Fig3B
+lung$time<-gsub("8 mon",'mon8',lung$time)
+lung$time<-factor(lung$time,levels = c('plain','1wk','2wk','3wk','mon8','Tibetan'))
+data<-AverageExpression(lung,assays = 'RNA',group.by = 'time')
+data<-data[["RNA"]]
+data<-as.data.frame(data)
+marker_exp <- t(scale(t(data),scale = T,center = T))
+marker_exp<-as.data.frame(marker_exp)
+marker_exp<- marker_exp %>% filter(!grepl('LOC',rownames(marker_exp)))
+up<-subset(marker_exp,plain<g1wk & g1wk<g2wk & g2wk<g3wk & g3wk<mon8 & mon8<Tibetan)
+down<-subset(marker_exp,plain>g1wk & g1wk>g2wk & g2wk>g3wk & g3wk>mon8 & mon8>Tibetan)
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                      keys = rownames(up),
+                                                      columns = 'ENTREZID',
+                                                      keytype = 'SYMBOL')[,2]))
+go_up <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go_up=DOSE::setReadable(go_up, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+ego_up<-subset(go_up@result,go_up@result$pvalue<0.05)
+
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                 keys = rownames(down),
+                                                 columns = 'ENTREZID')
+go_down <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go_down=DOSE::setReadable(go_down, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+ego_down<-subset(go_down@result,go_down@result$pvalue<0.05)
+
+
+a<- FindMarkers(lung, ident.1 = "1wk", ident.2 = "plain", group.by = "time",
+                                   min.pct = 0.25,
+                                 logfc.threshold = 0.25)
+b <- FindMarkers(lung, ident.1 = "2wk", ident.2 = "1wk", group.by = "time",
+                                     min.pct = 0.25,
+                                     logfc.threshold = 0.25)
+c <- FindMarkers(lung, ident.1 = "3wk", ident.2 = "2wk", group.by = "time",
+                                     min.pct = 0.25,
+                                     logfc.threshold = 0.25)
+d <- FindMarkers(lung, ident.1 = "8 mon", ident.2 = "3wk", group.by = "time",
+                                     min.pct = 0.25,
+                                     logfc.threshold = 0.25)
+e <- FindMarkers(lung, ident.1 = "Tibetan", ident.2 = "8 mon", group.by = "time",
+                                     min.pct = 0.25,
+                                     logfc.threshold = 0.25)
+a<-subset(a,a$p_val_adj<0.05)
+b<-subset(b,b$p_val_adj<0.05)
+c<-subset(c,c$p_val_adj<0.05)
+d<-subset(d,d$p_val_adj<0.05)
+e<-subset(e,e$p_val_adj<0.05)
+
+a_up<-subset(a,a$avg_log2FC>0)
+b_up<-subset(b,b$avg_log2FC>0)
+c_up<-subset(c,c$avg_log2FC>0)
+d_up<-subset(d,d$avg_log2FC>0)
+e_up<-subset(e,e$avg_log2FC>0)
+
+a_down<-subset(a,a$avg_log2FC<0)
+b_down<-subset(b,b$avg_log2FC<0)
+c_down<-subset(c,c$avg_log2FC<0)
+d_down<-subset(d,d$avg_log2FC<0)
+e_down<-subset(e,e$avg_log2FC<0)
+
+
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(a_up),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go1 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go1=DOSE::setReadable(go1, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go1@result$class<-'a_up'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(b_up),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go2 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go2=DOSE::setReadable(go2, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go2@result$class<-'b_up'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(c_up),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go3 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go3=DOSE::setReadable(go3, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go3@result$class<-'c_up'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(d_up),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go4 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go4=DOSE::setReadable(go4, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go4@result$class<-'d_up'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(e_up),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go5 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go5=DOSE::setReadable(go5, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go5@result$class<-'e_up'
+all<-rbind(go1@result,go2@result,go3@result,go4@result,go5@result)
+all<-subset(all,all$pvalue<0.05)
+df<-as.data.frame(table(all$Description))
+
+all$p<--log10(all$pvalue)
+tt<-subset(df,df$Freq>2)
+overlap<-subset(all,all$Description%in%tt$Var1)
+top10 <- all %>% group_by(class) %>% top_n(n = 5, wt = p)
+data<-rbind(overlap,top10)
+data$Description<-factor(data$Description,levels = unique(data$Description))
+data$class<-factor(data$class,levels = unique(data$class))
+data %>%ggplot(aes(x=class,y=Description,fill=p))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "white",mid = "#ff809d",high = "#fe1157")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(a_down),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go1 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go1=DOSE::setReadable(go1, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go1@result$class<-'a_down'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(b_down),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go2 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go2=DOSE::setReadable(go2, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go2@result$class<-'b_down'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(c_down),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go3 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go3=DOSE::setReadable(go3, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go3@result$class<-'c_down'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(d_down),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go4 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go4=DOSE::setReadable(go4, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go4@result$class<-'d_down'
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(e_down),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+go5 <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+go5=DOSE::setReadable(go5, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+go5@result$class<-'e_down'
+all<-rbind(go1@result,go2@result,go3@result,go4@result,go5@result)
+all<-subset(all,all$pvalue<0.05)
+df<-as.data.frame(table(all$Description))
+
+all$p<--log10(all$pvalue)
+tt<-subset(df,df$Freq>2)
+overlap<-subset(all,all$Description%in%tt$Var1)
+top10 <- all %>% group_by(class) %>% top_n(n = 5, wt = p)
+data<-rbind(overlap,top10)
+data$Description<-factor(data$Description,levels = unique(data$Description))
+data$class<-factor(data$class,levels = unique(data$class))
+data %>%ggplot(aes(x=class,y=Description,fill=p))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "white",mid = "#9bd9ff",high = "#0d6ac3")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+int<-intersect(rownames(b_up),rownames(c_up))
+int<-intersect(int,rownames(d_up))
+
+
+library('venn')
+library('VennDiagram')
+library('ggplot2')
+library('RColorBrewer')
+library('data.table')
+library(ggVennDiagram)
+df_list = list('p/1wk'=sample(rownames(a_up)),'1wk/2wk'=sample(rownames(b_up)),'2wk/3wk'=sample(rownames(c_up)),
+               '3wk/8mon'=sample(rownames(d_up)),'8mon/ts'=sample(rownames(e_up)))
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+df_list = list('p/1wk'=sample(rownames(a_up)),'1wk/2wk'=sample(rownames(b_up)),'2wk/3wk'=sample(rownames(c_up)),
+               '3wk/8mon'=sample(rownames(d_up)))
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+df_list = list('1wk/2wk'=sample(rownames(b_up)),'2wk/3wk'=sample(rownames(c_up)),
+               '3wk/8mon'=sample(rownames(d_up)))
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+
+int<-intersect(rownames(b_up),rownames(c_up))
+int<-intersect(int,rownames(d_up))
+DotPlot(lung,features = int)+ scale_color_gradientn("means",colors = c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#FDAE61", "#F46D43", "#D73027", "#A50026"))+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+
+
+
+
+library('venn')
+library('VennDiagram')
+library('ggplot2')
+library('RColorBrewer')
+library('data.table')
+library(ggVennDiagram)
+df_list = list('p/1wk'=sample(rownames(a_down)),'1wk/2wk'=sample(rownames(b_down)),'2wk/3wk'=sample(rownames(c_down)),
+               '3wk/8mon'=sample(rownames(d_down)),'8mon/ts'=sample(rownames(e_down)))
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "dodgerblue2")
+df_list = list('p/1wk'=sample(rownames(a_down)),'1wk/2wk'=sample(rownames(b_down)),'2wk/3wk'=sample(rownames(c_down)),
+               '3wk/8mon'=sample(rownames(d_down)))
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "dodgerblue2")
+df_list = list('1wk/2wk'=sample(rownames(b_down)),'2wk/3wk'=sample(rownames(c_down)),
+               '3wk/8mon'=sample(rownames(d_down)))
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "dodgerblue2")
+
+int<-intersect(rownames(b_down),rownames(c_down))
+int<-intersect(int,rownames(d_down))
+DotPlot(lung,features = int)+ scale_color_gradientn("means",colors = c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#FDAE61", "#F46D43", "#D73027", "#A50026"))+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+q<-list()
+w<-list()
+r<-list()
+y<-list()
+l<-list()
+int<-list()
+for (i in 1:length(df)) {
+  q[[i]]<-subset(ad6_pa_down,ad6_pa_down$class%in%df[[i]])
+  w[[i]]<-subset(ad14_ad6_down,ad14_ad6_down$class%in%df[[i]])
+  r[[i]]<-subset(ad21_ad14_down,ad21_ad14_down$class%in%df[[i]])
+  y[[i]]<-subset(sa_ad21_down,sa_ad21_down$class%in%df[[i]])
+  l[[i]]<-subset(la_sa_down,la_sa_down$class%in%df[[i]])
+  int[[i]]<-intersect(rownames(q[[i]]),rownames(w[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(r[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(y[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(l[[i]]))
+}
+
+q<-list()
+w<-list()
+r<-list()
+y<-list()
+l<-list()
+int<-list()
+for (i in 1:length(df)) {
+  q[[i]]<-subset(ad6_pa_down,ad6_pa_down$class%in%df[[i]])
+  w[[i]]<-subset(ad14_ad6_down,ad14_ad6_down$class%in%df[[i]])
+  r[[i]]<-subset(ad21_ad14_down,ad21_ad14_down$class%in%df[[i]])
+  y[[i]]<-subset(sa_ad21_down,sa_ad21_down$class%in%df[[i]])
+  l[[i]]<-subset(la_sa_down,la_sa_down$class%in%df[[i]])
+  int[[i]]<-intersect(rownames(q[[i]]),rownames(w[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(r[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(y[[i]]))
+}
+
+q<-list()
+w<-list()
+r<-list()
+y<-list()
+l<-list()
+int<-list()
+for (i in 1:length(df)) {
+  q[[i]]<-subset(ad6_pa_down,ad6_pa_down$class%in%df[[i]])
+  w[[i]]<-subset(ad14_ad6_down,ad14_ad6_down$class%in%df[[i]])
+  r[[i]]<-subset(ad21_ad14_down,ad21_ad14_down$class%in%df[[i]])
+  y[[i]]<-subset(sa_ad21_down,sa_ad21_down$class%in%df[[i]])
+  l[[i]]<-subset(la_sa_down,la_sa_down$class%in%df[[i]])
+  int[[i]]<-intersect(rownames(w[[i]]),rownames(r[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(y[[i]]))
+}
+
+####
+q<-list()
+w<-list()
+r<-list()
+y<-list()
+l<-list()
+int<-list()
+for (i in 1:length(df)) {
+  q[[i]]<-subset(ad6_pa_up,ad6_pa_up$class%in%df[[i]])
+  w[[i]]<-subset(ad14_ad6_up,ad14_ad6_up$class%in%df[[i]])
+  r[[i]]<-subset(ad21_ad14_up,ad21_ad14_up$class%in%df[[i]])
+  y[[i]]<-subset(sa_ad21_up,sa_ad21_up$class%in%df[[i]])
+  l[[i]]<-subset(la_sa_up,la_sa_up$class%in%df[[i]])
+  int[[i]]<-intersect(rownames(q[[i]]),rownames(w[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(r[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(y[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(l[[i]]))
+}
+
+q<-list()
+w<-list()
+r<-list()
+y<-list()
+l<-list()
+int<-list()
+for (i in 1:length(df)) {
+  q[[i]]<-subset(ad6_pa_up,ad6_pa_up$class%in%df[[i]])
+  w[[i]]<-subset(ad14_ad6_up,ad14_ad6_up$class%in%df[[i]])
+  r[[i]]<-subset(ad21_ad14_up,ad21_ad14_up$class%in%df[[i]])
+  y[[i]]<-subset(sa_ad21_up,sa_ad21_up$class%in%df[[i]])
+  l[[i]]<-subset(la_sa_up,la_sa_up$class%in%df[[i]])
+  int[[i]]<-intersect(rownames(q[[i]]),rownames(w[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(r[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(y[[i]]))
+}
+
+q<-list()
+w<-list()
+r<-list()
+y<-list()
+l<-list()
+int<-list()
+for (i in 1:length(df)) {
+  q[[i]]<-subset(ad6_pa_up,ad6_pa_up$class%in%df[[i]])
+  w[[i]]<-subset(ad14_ad6_up,ad14_ad6_up$class%in%df[[i]])
+  r[[i]]<-subset(ad21_ad14_up,ad21_ad14_up$class%in%df[[i]])
+  y[[i]]<-subset(sa_ad21_up,sa_ad21_up$class%in%df[[i]])
+  l[[i]]<-subset(la_sa_up,la_sa_up$class%in%df[[i]])
+  int[[i]]<-intersect(rownames(w[[i]]),rownames(r[[i]]))
+  int[[i]]<-intersect(int[[i]],rownames(y[[i]]))
+}
+
+
+##go
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(clusterProfiler)
+library(DOSE)
+library(org.Hs.eg.db)
+library(aPEAR)
+library(stringr)
+wk1_p<-list()
+wk2_wk1<-list()
+wk3_wk2<-list()
+mon8_wk3<-list()
+ts_mon8<-list()
+wk1_p_gene<-list()
+wk2_wk1_gene<-list()
+wk3_wk2_gene<-list()
+mon8_wk3_gene<-list()
+ts_mon8_gene<-list()
+wk1_p_go<-list()
+wk2_wk1_go<-list()
+wk3_wk2_go<-list()
+mon8_wk3_go<-list()
+ts_mon8_go<-list()
+all_wk1_p<-data.frame()
+all_wk2_wk1<-data.frame()
+all_wk3_wk2<-data.frame()
+all_mon8_wk3<-data.frame()
+all_ts_mon8<-data.frame()
+wk1_p_int<-list()
+wk2_wk1_int<-list()
+wk3_wk2_int<-list()
+mon8_wk3_int<-list()
+ts_mon8_int<-list()
+
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    wk1_p[[i]]<-subset(ad6_pa_up,ad6_pa_up$class%in%df[[i]])
+    wk1_p_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(wk1_p[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    wk1_p_go[[i]] <- enrichGO(wk1_p_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    wk1_p_go[[i]]=DOSE::setReadable(wk1_p_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    wk1_p_go[[i]]@result$class<-df[[i]]
+    all_wk1_p<-rbind(all_wk1_p,wk1_p_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    wk2_wk1[[i]]<-subset(ad14_ad6_up,ad14_ad6_up$class%in%df[[i]])
+    wk2_wk1_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(wk2_wk1[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    wk2_wk1_go[[i]] <- enrichGO(wk2_wk1_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    wk2_wk1_go[[i]]=DOSE::setReadable(wk2_wk1_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    wk2_wk1_go[[i]]@result$class<-df[[i]]
+    all_wk2_wk1<-rbind(all_wk2_wk1,wk2_wk1_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    wk3_wk2[[i]]<-subset(ad21_ad14_up,ad21_ad14_up$class%in%df[[i]])
+    wk3_wk2_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(wk3_wk2[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    wk3_wk2_go[[i]] <- enrichGO(wk3_wk2_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    wk3_wk2_go[[i]]=DOSE::setReadable(wk3_wk2_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    wk3_wk2_go[[i]]@result$class<-df[[i]]
+    all_wk3_wk2<-rbind(all_wk3_wk2,wk3_wk2_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    mon8_wk3[[i]]<-subset(sa_ad21_up,sa_ad21_up$class%in%df[[i]])
+    mon8_wk3_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(mon8_wk3[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    mon8_wk3_go[[i]] <- enrichGO(mon8_wk3_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    mon8_wk3_go[[i]]=DOSE::setReadable(mon8_wk3_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    mon8_wk3_go[[i]]@result$class<-df[[i]]
+    all_mon8_wk3<-rbind(all_mon8_wk3,mon8_wk3_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    ts_mon8[[i]]<-subset(la_sa_up,la_sa_up$class%in%df[[i]])
+    ts_mon8_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(ts_mon8[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    ts_mon8_go[[i]] <- enrichGO(ts_mon8_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    ts_mon8_go[[i]]=DOSE::setReadable(ts_mon8_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    ts_mon8_go[[i]]@result$class<-df[[i]]
+    all_ts_mon8<-rbind(all_ts_mon8,ts_mon8_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+dff<-as.data.frame(table(all_ts_mon8$Description))
+all_ts_mon8$p<--log10(all_ts_mon8$pvalue)
+tt<-subset(dff,dff$Freq>5)
+overlap<-subset(all_ts_mon8,all_ts_mon8$Description%in%tt$Var1)
+top10 <- all_ts_mon8 %>% group_by(class) %>% top_n(n = 3, wt = p)
+data<-rbind(overlap,top10)
+top10$Description<-factor(top10$Description,levels = unique(top10$Description))
+top10$class<-factor(top10$class,levels = unique(top10$class))
+top10 %>%ggplot(aes(x=class,y=Description,fill=p))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "white",mid = "#ff809d",high = "#fe1157")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+df<-as.data.frame(table(all_wk3_wk2$Description))
+View(df)
+all_wk2_wk1$p<--log10(all_wk2_wk1$pvalue)
+top10 <- all_wk2_wk1 %>% group_by(class) %>% top_n(n = 5, wt = p)
+top10<-subset(top10,top10$ONTOLOGY%in%'BP')
+top10$Description<-factor(top10$Description,levels = unique(top10$Description))
+top10$class<-factor(top10$class,levels = unique(top10$class))
+top10 %>%ggplot(aes(x=class,y=Description,fill=p))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "white",mid = "#ff809d",high = "#ff809d",midpoint = 30)+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+##down
+wk1_p<-list()
+wk2_wk1<-list()
+wk3_wk2<-list()
+mon8_wk3<-list()
+ts_mon8<-list()
+wk1_p_gene<-list()
+wk2_wk1_gene<-list()
+wk3_wk2_gene<-list()
+mon8_wk3_gene<-list()
+ts_mon8_gene<-list()
+wk1_p_go<-list()
+wk2_wk1_go<-list()
+wk3_wk2_go<-list()
+mon8_wk3_go<-list()
+ts_mon8_go<-list()
+all_wk1_p<-data.frame()
+all_wk2_wk1<-data.frame()
+all_wk3_wk2<-data.frame()
+all_mon8_wk3<-data.frame()
+all_ts_mon8<-data.frame()
+wk1_p_int<-list()
+wk2_wk1_int<-list()
+wk3_wk2_int<-list()
+mon8_wk3_int<-list()
+ts_mon8_int<-list()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    wk1_p[[i]]<-subset(ad6_pa_down,ad6_pa_down$class%in%df[[i]])
+    wk1_p_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(wk1_p[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    wk1_p_go[[i]] <- enrichGO(wk1_p_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    wk1_p_go[[i]]=DOSE::setReadable(wk1_p_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    wk1_p_go[[i]]@result$class<-df[[i]]
+    all_wk1_p<-rbind(all_wk1_p,wk1_p_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    wk2_wk1[[i]]<-subset(ad14_ad6_down,ad14_ad6_down$class%in%df[[i]])
+    wk2_wk1_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(wk2_wk1[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    wk2_wk1_go[[i]] <- enrichGO(wk2_wk1_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    wk2_wk1_go[[i]]=DOSE::setReadable(wk2_wk1_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    wk2_wk1_go[[i]]@result$class<-df[[i]]
+    all_wk2_wk1<-rbind(all_wk2_wk1,wk2_wk1_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    wk3_wk2[[i]]<-subset(ad21_ad14_down,ad21_ad14_down$class%in%df[[i]])
+    wk3_wk2_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(wk3_wk2[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    wk3_wk2_go[[i]] <- enrichGO(wk3_wk2_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    wk3_wk2_go[[i]]=DOSE::setReadable(wk3_wk2_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    wk3_wk2_go[[i]]@result$class<-df[[i]]
+    all_wk3_wk2<-rbind(all_wk3_wk2,wk3_wk2_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    mon8_wk3[[i]]<-subset(sa_ad21_down,sa_ad21_down$class%in%df[[i]])
+    mon8_wk3_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(mon8_wk3[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    mon8_wk3_go[[i]] <- enrichGO(mon8_wk3_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    mon8_wk3_go[[i]]=DOSE::setReadable(mon8_wk3_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    mon8_wk3_go[[i]]@result$class<-df[[i]]
+    all_mon8_wk3<-rbind(all_mon8_wk3,mon8_wk3_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    ts_mon8[[i]]<-subset(la_sa_down,la_sa_down$class%in%df[[i]])
+    ts_mon8_gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = rownames(ts_mon8[[i]]),columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+    ts_mon8_go[[i]] <- enrichGO(ts_mon8_gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    ts_mon8_go[[i]]=DOSE::setReadable(ts_mon8_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    ts_mon8_go[[i]]@result$class<-df[[i]]
+    all_ts_mon8<-rbind(all_ts_mon8,ts_mon8_go[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+dff<-as.data.frame(table(all_ts_mon8$Description))
+all_ts_mon8$p<--log10(all_ts_mon8$pvalue)
+tt<-subset(dff,dff$Freq>5)
+overlap<-subset(all_ts_mon8,all_ts_mon8$Description%in%tt$Var1)
+top10 <- all_ts_mon8 %>% group_by(class) %>% top_n(n = 3, wt = p)
+data<-rbind(overlap,top10)
+top10$Description<-factor(top10$Description,levels = unique(top10$Description))
+top10$class<-factor(top10$class,levels = unique(top10$class))
+top10 %>%ggplot(aes(x=class,y=Description,fill=p))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "white",mid = "#9bd9ff",high = "#0d6ac3")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+df<-as.data.frame(table(all_wk2_wk1$Description))
+View(df)
+all_wk1_p$p<--log10(all_wk1_p$pvalue)
+top10 <- all_wk1_p %>% group_by(class) %>% top_n(n = 5, wt = p)
+top10<-subset(top10,top10$ONTOLOGY%in%'BP')
+top10$Description<-factor(top10$Description,levels = unique(top10$Description))
+top10$class<-factor(top10$class,levels = unique(top10$class))
+top10 %>%ggplot(aes(x=class,y=Description,fill=p))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "white",mid = "#9bd9ff",high = "#0d6ac3",midpoint = 30)+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 14,color="black"),
+  )
+
+
+cd4<-as.data.frame(table(cd4_copmare_up$class))
+cd4<-as.character(cd4$Var1)
+df<-list()
+for (i in 1:length(cd4)) {
+       df[[i]]<-subset(cd4_copmare_up,cd4_copmare_up$class%in%cd4[[i]])
+     }
+
+cd8<-as.data.frame(table(cd8_compare_up$class))
+cd8<-as.character(cd8$Var1)
+tt<-list()
+for (i in 1:length(cd8)) {
+       tt[[i]]<-subset(cd8_compare_up,cd8_compare_up$class%in%cd8[[i]])
+    }
+int1<-intersect(df[[1]]$Description,tt[[1]]$Description)
+int2<-intersect(df[[2]]$Description,tt[[2]]$Description)
+int3<-intersect(df[[3]]$Description,tt[[3]]$Description)
+int4<-intersect(df[[4]]$Description,tt[[4]]$Description)
+int5<-intersect(df[[5]]$Description,tt[[5]]$Description)
+
+a1<-subset(df[[1]],df[[1]]$Description%in%int1)
+a2<-subset(df[[2]],df[[2]]$Description%in%int2)
+a3<-subset(df[[3]],df[[3]]$Description%in%int3)
+a4<-subset(df[[4]],df[[4]]$Description%in%int4)
+a5<-subset(df[[5]],df[[5]]$Description%in%int5)
+b1<-subset(tt[[1]],tt[[1]]$Description%in%int1)
+b2<-subset(tt[[2]],tt[[2]]$Description%in%int2)
+b3<-subset(tt[[3]],tt[[3]]$Description%in%int3)
+b4<-subset(tt[[4]],tt[[4]]$Description%in%int4)
+b5<-subset(tt[[5]],tt[[5]]$Description%in%int5)
+
+##DEG_CELLTYPE
+lung$time<-factor(lung$time,levels = c('plain','1wk', '2wk' ,'3wk','8 mon','Tibetan'))
+DefaultAssay(lung)<-'RNA'
+mac<-subset(lung,idents = 'Macrophages')
+mon<-subset(lung,idents = 'Monocyte')
+neut<-subset(lung,idents = 'Neutrophils')
+bpla<-subset(lung,idents = 'B plasma')
+cd4<-subset(lung,idents = 'CD4-T')
+cd8<-subset(lung,idents = 'CD8-T')
+B<-subset(lung,idents = 'B')
+am<-subset(lung,idents = 'Alveolar macrophage')
+DefaultAssay(mon)<-'RNA'
+DefaultAssay(neut)<-'RNA'
+DefaultAssay(bpla)<-'RNA'
+DefaultAssay(cd4)<-'RNA'
+DefaultAssay(cd8)<-'RNA'
+DefaultAssay(B)<-'RNA'
+DefaultAssay(am)<-'RNA'
+
+a<- FindMarkers(cd4, ident.1 = "1wk", ident.2 = "plain", group.by = "time",
+                min.pct = 0.25,only.positive=T,
+                logfc.threshold = 0.25)
+b <- FindMarkers(cd4, ident.1 = "2wk", ident.2 = "1wk", group.by = "time",
+                 min.pct = 0.25,
+                 logfc.threshold = 0.25)
+c <- FindMarkers(cd4, ident.1 = "3wk", ident.2 = "2wk", group.by = "time",
+                 min.pct = 0.25,
+                 logfc.threshold = 0.25)
+d <- FindMarkers(cd4, ident.1 = "8 mon", ident.2 = "3wk", group.by = "time",
+                 min.pct = 0.25,
+                 logfc.threshold = 0.25)
+e <- FindMarkers(cd4, ident.1 = "Tibetan", ident.2 = "8 mon", group.by = "time",
+                 min.pct = 0.25,
+                 logfc.threshold = 0.25)
+a<-subset(a,a$p_val_adj<0.05)
+b<-subset(b,b$p_val_adj<0.05)
+c<-subset(c,c$p_val_adj<0.05)
+d<-subset(d,d$p_val_adj<0.05)
+e<-subset(e,e$p_val_adj<0.05)
+a$class<-'wk1_p'
+b$class<-'wk2_wk1'
+c$class<-'wk3_wk2'
+d$class<-'mon8_wk3'
+e$class<-'ts_mon8'
+all<-rbind(a,b,c,d,e)
+
+wk1_p<-as.data.frame(intersect(rownames(a),gene$GENE))
+wk2_wk1<-as.data.frame(intersect(rownames(b),gene$GENE))
+wk3_wk2<-as.data.frame(intersect(rownames(c),gene$GENE))
+mon8_wk3<-as.data.frame(intersect(rownames(d),gene$GENE))
+ts_mon8<-as.data.frame(intersect(rownames(e),gene$GENE))
+colnames(wk1_p)<-'gene'
+colnames(wk2_wk1)<-'gene'
+colnames(wk3_wk2)<-'gene'
+colnames(mon8_wk3)<-'gene'
+colnames(ts_mon8)<-'gene'
+wk1_p$class<-'wk1_p'
+wk2_wk1$class<-'wk2_wk1'
+wk3_wk2$class<-'wk3_wk2'
+mon8_wk3$class<-'mon8_wk3'
+ts_mon8$class<-'ts_mon8'
+all<-rbind(wk1_p,wk2_wk1,wk3_wk2,mon8_wk3,ts_mon8)
+
+mon$time<-factor(mon$time,levels = c('plain','1wk', '2wk' ,'3wk','8 mon','Tibetan'))
+data<-AverageExpression(mon,group.by = 'time',features = gene$GENE)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data[is.na(data)] <- 0
+Heatmap(data,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = F,show_row_names = T)
+
+Heatmap(data,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+
+a$class<-'wk1_p'
+b$class<-'wk2_wk1'
+c$class<-'wk3_wk2'
+d$class<-'mon8_wk3'
+e$class<-'ts_mon8'
+pc<-rbind(a,b,c,d,e)
+pc$cell<-'Macrophages'
+write.csv(pc,file='lung_Macrophages.csv')
+
+t<-list()
+go<-list()
+library(stringr)
+ego<-list()
+gene<-list()
+df<-as.data.frame(table(all$class))
+df<-as.character(df$Var1)
+mon_go<-data.frame()
+for (i in 1:length(df)) {
+  t[[i]]<-subset(all,all$class%in%df[[i]])
+  gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                        keys = rownames(t[[i]]),
+                                                        columns = 'ENTREZID',
+                                                        keytype = 'SYMBOL')[,2]))
+  go[[i]] <- enrichGO(gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+  go[[i]]=DOSE::setReadable(go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+  go[[i]]@result$time<-df[[i]]
+  go[[i]]@result$cell<-'mon'
+  mon_go<-rbind(mon_go,go[[i]]@result)
+}
+mon_go<-subset(mon_go,mon_go$pvalue<0.05)
+
+
+
+
+
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+
+
+
+
+am_up_pc<-int
+
+int<-intersect(rownames(a_down),rownames(b_down))
+int<-intersect(int,rownames(c_down))
+int<-intersect(int,rownames(d_down))
+int<-intersect(int,rownames(e_down))
+am_down<-int
+int<-intersect(int,gene$GENE)
+am_down_pc<-int
+
+##figure 4 cellphonedb
+k1<-read.table("statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+wk1<-subset(wk1,wk1$rank<1)
+lr<-wk1$interacting_pair
+all_pval =  read.table("statistical_analysis_pvalues.txt",header = T,sep = "\t",stringsAsFactors = F)
+all_means =  read.table("statistical_analysis_means.txt",header = T,sep = "\t",stringsAsFactors = F)
+all_pval$directionality<-NULL
+all_means$directionality<-NULL
+all_pval$classification<-NULL
+all_means$classification<-NULL
+intr_pairs = all_pval$interacting_pair
+all_pval = all_pval[,-c(1:11)]
+all_means = all_means[,-c(1:11)]
+sig_pairs <- all_pval
+#sig_pairs1 <- sig_pairs[,-c(1, 3:11)]
+sig_pairs <- sig_pairs[which(rowSums(sig_pairs<=0.05)!=0), ]
+dim(sig_pairs)
+sel_pval = all_pval[match(lr, intr_pairs),]#selected_celltype]#将上述需要呈现的受配体选出来
+sel_means = all_means[match(lr, intr_pairs),]# selected_celltype]
+df_names = expand.grid(lr)   #, selected_celltype)
+pval = unlist(sel_pval)
+pval[pval==0] = 0.00001
+plot.data = cbind(df_names,pval)
+pr = unlist(as.data.frame(sel_means))
+plot.data = cbind(plot.data,pr)
+colnames(plot.data) = c( 'clusters', 'pvalue', 'mean')
+plot.data$pair<-rownames(plot.data)
+plot<-gsub('.{1}$','',plot.data$pair)
+plot.data$pair<-plot
+plot.data$clusters <- gsub('[|]', '_', plot.data$clusters)
+my_palette <- colorRampPalette(c("darkblue","yellow","red"))(n=1000)
+my_palette <- colorRampPalette(c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#FDAE61", "#F46D43", "#D73027", "#A50026"))(n=1000)
+p<-ggplot(plot.data,aes(x=clusters,y=pair)) +
+  geom_point(aes(size=-log10(pvalue + 0.001),color=mean)) +
+  scale_size_continuous(range=c(1,5),breaks = c(0,1.0,2.0))+
+  scale_color_gradientn('Mean expression', colors=my_palette,limits=c(0,3)) +
+  coord_flip()+
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.text=element_text(size=10, colour = "black"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, size=10),
+        axis.text.y = element_text(size=10, colour = "black"),
+        axis.title=element_blank(),
+        panel.border = element_rect(size = 0.7, linetype = "solid", colour = "black"))
+p<-subset(p[["data"]],p[["data"]]$pvalue<0.5)
+all$pair <- gsub("\\d+", "", all$pair)
+
+p$time<-'1wk'
+p1<-p
+p$time<-'2wk'
+p2<-p
+p$time<-'3wk'
+p3<-p
+p$time<-'8mon'
+p8<-p
+p$time<-'ts'
+pt<-p
+all<-rbind(p1,p2,p3,p8,pt)
+
+p<-tidyr::unite(p, "new", time, clusters)
+
+all$pair<-gsub('Activated.microglia','Activated_microglia',all$pair)
+all$pair<-gsub('Inhibitory.neuron','Inhibitory_neuron',all$pair)
+all$pair<-gsub('Excitatory.neuron','Excitatory_neuron',all$pair)
+all$pair<-gsub('Homeostatic.microglia','Homeostatic_microglia',all$pair)
+all$pair<-gsub('Activated microglia','Activated_microglia',all$pair)
+all$pair<-gsub('Oligodendrocytes.precursor.cell','Oligodendrocytes_precursor_cell',all$pair)
+all$pair<-gsub('Purkinje.cells','Purkinje_cells',all$pair)
+all$pair<-gsub('Glial.cell','Glial_cell',all$pair)
+all$pair<-gsub('Endocrine.cells','Endocrine_cells',all$pair)
+all$pair<-gsub('Meningeal.cell','Meningeal_cell',all$pair)
+all$pair<-gsub('Ependymal.cell','Ependymal_cell',all$pair)
+all$pair<-gsub('Proliferative.cell','Proliferative_cell',all$pair)
+all$pair<-gsub('T.cell','T_cell',all$pair)
+
+ggplot(p,aes(x=new,y=pair)) +
+  geom_point(aes(size=-log10(pvalue +0.0001),color=mean))+
+  scale_color_gradientn("means",colors = c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#F46D43", "#D73027", "#A50026"))+
+  theme_bw()+scale_size_continuous(range = c(1,3),name="-log10(pvals)")+
+  theme(
+    axis.title = element_blank(),
+    axis.text.x.bottom = element_text(hjust = 1, angle = 45, size=6, color = "black"),
+    axis.text.y.left = element_text(size = 8,color = "black"),
+    axis.ticks.length = unit(0.15,"cm")
+  )
+
+
+
+
+
+
+
+
+##figure 5 cellphonedb
+##find clr
+wk1<-read.table("lung_1wk/statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+wk2<-read.table("lung_2wk/statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+wk3<-read.table("lung_3wk/statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+mon8<-read.table("lung_8mon/statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+p<-read.table("lung_plain/statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+ts<-read.table("lung_ts/statistical_analysis_significant_means.txt",header=T,quote="",sep="\t")
+
+wk1<-subset(wk1,wk1$rank<1)
+wk2<-subset(wk2,wk2$rank<1)
+wk3<-subset(wk3,wk3$rank<1)
+mon8<-subset(mon8,mon8$rank<1)
+p<-subset(p,p$rank<1)
+ts<-subset(ts,ts$rank<1)
+
+alr<-intersect(wk1$interacting_pair,wk2$interacting_pair)
+alr<-intersect(alr,wk3$interacting_pair)
+alr<-intersect(alr,mon8$interacting_pair)
+plr <- setdiff(ts$interacting_pair, p$interacting_pair)
+clr<-intersect(alr,plr)
+
+
+
+##go
+clr<-as.data.frame(clr)
+split_data <- strsplit(clr$clr, split = "_", fixed = TRUE)
+split_vector <- unlist(split_data)
+unique_split_vector <- unique(split_vector)
+clr_gene <- data.frame(gene = unique_split_vector)
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = clr_gene$gene,columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+clr_go <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+clr_go=DOSE::setReadable(clr_go, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+clr_ego <- simplify(clr_go, cutoff=0.7, by="p.adjust", select_fun=min)
+clr_ego@result$class<-'CLR'
+clr_ego<-subset(clr_ego@result,clr_ego@result$pvalue<0.05)
+
+plr<-as.data.frame(plr)
+split_data <- strsplit(plr$plr, split = "_", fixed = TRUE)
+split_vector <- unlist(split_data)
+unique_split_vector <- unique(split_vector)
+plr_gene <- data.frame(gene = unique_split_vector)
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = plr_gene$gene,columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+plr_go <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+plr_go=DOSE::setReadable(plr_go, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+plr_ego <- simplify(plr_go, cutoff=0.7, by="p.adjust", select_fun=min)
+plr_ego@result$class<-'PLR'
+plr_ego<-subset(plr_ego@result,plr_ego@result$pvalue<0.05)
+
+alr<-as.data.frame(alr)
+split_data <- strsplit(alr$alr, split = "_", fixed = TRUE)
+split_vector <- unlist(split_data)
+unique_split_vector <- unique(split_vector)
+alr_gene <- data.frame(gene = unique_split_vector)
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = alr_gene$gene,columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+alr_go <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+alr_go=DOSE::setReadable(alr_go, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+alr_ego <- simplify(alr_go, cutoff=0.7, by="p.adjust", select_fun=min)
+alr_ego@result$class<-'ALR'
+alr_ego<-subset(alr_ego@result,alr_ego@result$pvalue<0.05)
+
+##specific go
+plr_ego_sp <- setdiff(plr_ego$Description, union(alr_ego$Description, clr_ego$Description))
+alr_ego_sp <- setdiff(alr_ego$Description, union(plr_ego$Description, clr_ego$Description))
+clr_ego_sp <- setdiff(clr_ego$Description, union(alr_ego$Description, plr_ego$Description))
+plr_ego_sp<-subset(plr_ego,plr_ego$Description%in%plr_ego_sp)
+alr_ego_sp<-subset(alr_ego,alr_ego$Description%in%alr_ego_sp)
+clr_ego_sp<-subset(clr_ego,clr_ego$Description%in%clr_ego_sp)
+
+all<-rbind(plr_ego_sp,alr_ego_sp,clr_ego_sp)
+all$p<--log10(all$pvalue)
+top20 <- all %>% group_by(class) %>% top_n(n = 20, wt = p)
+top20$gene <- sapply(strsplit(top20$geneID, "/"), function(gene_list) {
+  # 如果基因数量不足10个，则返回全部基因；否则返回前10个
+  if (length(gene_list) > 10) {
+    return(paste(gene_list[1:10], collapse = "/"))
+  } else {
+    return(paste(gene_list, collapse = "/"))
+  }
+})
+mytheme <- theme(
+  axis.title = element_text(size = 13),
+  axis.text = element_text(size = 11),
+  axis.text.y = element_blank(), # 在自定义主题中去掉 y 轴通路标签:
+  axis.ticks.length.y = unit(0,"cm"),
+  plot.title = element_text(size = 13, hjust = 0.5, face = "bold"),
+  legend.title = element_text(size = 13),
+  legend.text = element_text(size = 11),
+  plot.margin = margin(t = 5.5, r = 10, l = 5.5, b = 5.5)
+)
+top20$class<-factor(top20$class,levels = c('PLR','ALR','CLR'))
+top20$Description<-factor(top20$Description,levels = unique(top20$Description))
+# 假设你的颜色向量是针对每个'class'分类的，这里我们使用unique(top1$class)来获取分类，然后为每个分类指定一个颜色
+unique_classes <- unique(top20$class)
+colors_for_classes <- c('#9bd9ff', '#ff999a','#fbceab')[1:length(unique_classes)]
+
+# 现在，我们使用一个函数来为每一行数据匹配正确的颜色
+color_vector <- sapply(top20$class, function(cls) colors_for_classes[cls])
+
+##柱状图
+ggplot(data = top20, aes(x = -log10(pvalue), y = rev(Description), fill = class)) +
+  scale_fill_manual(values = colors_for_classes) +
+  geom_bar(stat = "identity", width = 0.5, alpha = 0.8) +
+  scale_x_continuous(expand = c(0,0)) +
+  geom_text(size=3.8, aes(x = 0.05, label = Description), hjust = 0) +
+  geom_text(size=3.5, aes(x = 0.05, label = gene, color = I(color_vector)), hjust = 0, vjust = 3) +
+  theme_classic() +
+  mytheme +
+  scale_color_identity() # 由于我们已经指定了颜色向量，需要添加这行代码
+
+##棒棒糖
+ggplot(lung_20,aes(x=-log10(pvalue),y=Description))+
+  geom_col(aes(fill=class),width = 0.05)+ #连线
+  geom_point(data=lung_20,aes(size=Count,color=class))+#点
+  theme_classic()+geom_text(size=3.5, aes(x = 0.05, label = geneID, color = I(color_vector)), hjust = 0, vjust = 3)+
+  theme(axis.title.y = element_blank(),
+        axis.line = element_line(colour = 'black', linewidth =0.5),
+        axis.text.x = element_text(colour = 'black', size = 10),
+        axis.ticks.x = element_line(colour = 'black'),
+        axis.title.x = element_text(colour = 'black', size = 12))+scale_fill_manual(values = colors_for_classes)+scale_color_manual(values = colors_for_classes)
+
+
+##subset clr dotplot
+selected_celltype = cell$...1
+clr<-df$clr
+setwd("E:/high adaption/analysis/cpdb/lung_1wk")
+setwd("E:/high adaption/analysis/cpdb/lung_2wk")
+setwd("E:/high adaption/analysis/cpdb/lung_3wk")
+setwd("E:/high adaption/analysis/cpdb/lung_8mon")
+setwd("E:/high adaption/analysis/cpdb/lung_ts")
+
+##all_pairs
+all_pval =  read.table("statistical_analysis_pvalues.txt",header = T,sep = "\t",stringsAsFactors = F)
+all_means =  read.table("statistical_analysis_means.txt",header = T,sep = "\t",stringsAsFactors = F)
+all_pval$directionality<-NULL
+all_means$directionality<-NULL
+all_pval$classification<-NULL
+all_means$classification<-NULL
+intr_pairs = all_pval$interacting_pair
+all_pval = all_pval[,-c(1:11)]
+all_means = all_means[,-c(1:11)]
+sig_pairs <- all_pval
+#sig_pairs1 <- sig_pairs[,-c(1, 3:11)]
+sig_pairs <- sig_pairs[which(rowSums(sig_pairs<=0.05)!=0), ]
+dim(sig_pairs)
+sel_pval = all_pval[match(clr, intr_pairs),]#selected_celltype]#将上述需要呈现的受配体选出来
+sel_means = all_means[match(clr, intr_pairs),]# selected_celltype]
+df_names = expand.grid(clr)   #, selected_celltype)
+pval = unlist(sel_pval)
+pval[pval==0] = 0.00001
+plot.data = cbind(df_names,pval)
+pr = unlist(as.data.frame(sel_means))
+plot.data = cbind(plot.data,pr)
+colnames(plot.data) = c( 'clusters', 'pvalue', 'mean')
+plot.data$pair<-rownames(plot.data)
+plot<-gsub('.{1}$','',plot.data$pair)
+plot.data$pair<-plot
+plot.data$clusters <- gsub('[|]', '_', plot.data$clusters)
+my_palette <- colorRampPalette(c("darkblue","yellow","red"))(n=1000)
+my_palette <- colorRampPalette(c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#FDAE61", "#F46D43", "#D73027", "#A50026"))(n=1000)
+p<-ggplot(plot.data,aes(x=clusters,y=pair)) +
+  geom_point(aes(size=-log10(pvalue + 0.001),color=mean)) +
+  scale_size_continuous(range=c(1,5),breaks = c(0,1.0,2.0))+
+  scale_color_gradientn('Mean expression', colors=my_palette,limits=c(0,3)) +
+  coord_flip()+
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.text=element_text(size=10, colour = "black"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, size=10),
+        axis.text.y = element_text(size=10, colour = "black"),
+        axis.title=element_blank(),
+        panel.border = element_rect(size = 0.7, linetype = "solid", colour = "black"))
+p<-subset(p[["data"]],p[["data"]]$pvalue<0.5)
+p$pair <- gsub("\\d+", "", p$pair)
+
+p$time<-'1wk'
+p1<-p
+p$time<-'2wk'
+p2<-p
+p$time<-'3wk'
+p3<-p
+p$time<-'8mon'
+p8<-p
+p$time<-'ts'
+pt<-p
+all<-rbind(p1,p2,p3,p8,pt)
+
+all<-tidyr::unite(all, "new", time, clusters)
+
+all$pair<-gsub('Activated.microglia','Activated_microglia',all$pair)
+all$pair<-gsub('Inhibitory.neuron','Inhibitory_neuron',all$pair)
+all$pair<-gsub('Excitatory.neuron','Excitatory_neuron',all$pair)
+all$pair<-gsub('Homeostatic.microglia','Homeostatic_microglia',all$pair)
+all$pair<-gsub('Activated microglia','Activated_microglia',all$pair)
+all$pair<-gsub('Oligodendrocytes.precursor.cell','Oligodendrocytes_precursor_cell',all$pair)
+all$pair<-gsub('Purkinje.cells','Purkinje_cells',all$pair)
+all$pair<-gsub('Glial.cell','Glial_cell',all$pair)
+all$pair<-gsub('Endocrine.cells','Endocrine_cells',all$pair)
+all$pair<-gsub('Meningeal.cell','Meningeal_cell',all$pair)
+all$pair<-gsub('Ependymal.cell','Ependymal_cell',all$pair)
+all$pair<-gsub('Proliferative.cell','Proliferative_cell',all$pair)
+all$pair<-gsub('T.cell','T_cell',all$pair)
+
+ggplot(all,aes(x=new,y=pair)) +
+  geom_point(aes(size=-log10(pvalue +0.0001),color=mean))+
+  scale_color_gradientn("means",colors = c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#F46D43", "#D73027", "#A50026"))+
+  theme_bw()+scale_size_continuous(range = c(1,3),name="-log10(pvals)")+
+  theme(
+    axis.title = element_blank(),
+    axis.text.x.bottom = element_text(hjust = 1, angle = 45, size=6, color = "black"),
+    axis.text.y.left = element_text(size = 8,color = "black"),
+    axis.ticks.length = unit(0.15,"cm")
+  )
+
+
+##select_pairs
+selected_celltype = cell$...1
+clr<-df$clr
+setwd("E:/high adaption/analysis/cpdb/lung_1wk")
+setwd("E:/high adaption/analysis/cpdb/lung_2wk")
+setwd("E:/high adaption/analysis/cpdb/lung_3wk")
+setwd("E:/high adaption/analysis/cpdb/lung_8mon")
+setwd("E:/high adaption/analysis/cpdb/lung_ts")
+all_pval =  read.table("statistical_analysis_pvalues.txt",header = T,sep = "\t",stringsAsFactors = F)
+all_means =  read.table("statistical_analysis_means.txt",header = T,sep = "\t",stringsAsFactors = F)
+all_pval$directionality<-NULL
+all_means$directionality<-NULL
+all_pval$classification<-NULL
+all_means$classification<-NULL
+intr_pairs = all_pval$interacting_pair
+all_pval = all_pval[,-c(1:11)]
+all_means = all_means[,-c(1:11)]
+sig_pairs <- all_pval
+sig_pairs <- sig_pairs[,-c(1, 3:11)]
+sig_pairs <- sig_pairs[which(rowSums(sig_pairs<=0.05)!=0), ]
+dim(sig_pairs)
+sel_pval = all_pval[match(clr, intr_pairs), selected_celltype]#将上述需要呈现的受配体选出来
+sel_means = all_means[match(clr, intr_pairs), selected_celltype]
+df_names = expand.grid(clr, selected_celltype)
+sel_pval$directionality<-NULL
+sel_pval$classification<-NULL
+sel_means$directionality<-NULL
+sel_means$classification<-NULL
+pval = unlist(sel_pval)
+pval[pval==0] = 0.00001
+plot.data = cbind(df_names,pval)
+pr = unlist(as.data.frame(sel_means))
+plot.data = cbind(plot.data,pr)
+colnames(plot.data) = c('pair', 'clusters', 'pvalue', 'mean')
+plot.data$clusters <- gsub('[|]', '_', plot.data$clusters)
+my_palette <- colorRampPalette(c("darkblue","yellow","red"))(n=1000)
+p<-ggplot(plot.data,aes(x=clusters,y=pair)) +
+  geom_point(aes(size=-log10(pvalue + 0.001),color=mean)) +
+  scale_size_continuous(range=c(1,5),breaks = c(0,1.0,2.0))+
+  scale_color_gradientn('Mean expression', colors=my_palette,limits=c(0,3)) +
+  coord_flip()+
+  theme_bw() +
+  theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
+        axis.text=element_text(size=10, colour = "black"),
+        axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0, size=10),
+        axis.text.y = element_text(size=10, colour = "black"),
+        axis.title=element_blank(),
+        panel.border = element_rect(size = 0.7, linetype = "solid", colour = "black"))
+p<-subset(p[["data"]],p[["data"]]$pvalue<0.5)
+all$pair <- gsub("\\d+", "", all$pair)
+
+p$time<-'1wk'
+p1<-p
+p$time<-'2wk'
+p2<-p
+p$time<-'3wk'
+p3<-p
+p$time<-'8mon'
+p8<-p
+p$time<-'ts'
+pt<-p
+all<-rbind(p1,p2,p3,p8,pt)
+
+all<-tidyr::unite(all, "new", time, pair)
+
+ggplot(all,aes(x=new,y=all$clusters)) +
+  geom_point(aes(size=-log10(pvalue +0.0001),color=mean))+
+  scale_color_gradientn("means",colors = c("#313695", "#4575B4", "#ABD9E9", "#FFFFB3", "#F46D43", "#D73027", "#A50026"))+
+  theme_bw()+scale_size_continuous(range = c(1,3),name="-log10(pvals)")+
+  theme(
+    axis.title = element_blank(),
+    axis.text.x.bottom = element_text(hjust = 1, angle = 45, size=6, color = "black"),
+    axis.text.y.left = element_text(size = 8,color = "black"),
+    axis.ticks.length = unit(0.15,"cm")
+  )
+
+
+
+
+###network
+##单个计算 seurat名称更换
+library(tidygraph)
+sig_p <- read.delim("./statistical_analysis_pvalues.txt", check.names = F)
+ks_cpdb_sig_interCount <- function(pval_data,#cellphonedb V5输出结果，pval.txt文件
+                                   significant=0.05,#互作显著性
+                                   source_celltype,#ource celltype
+                                   color_set=NULL,#celltype颜色设置
+                                   celltype_order=NULL,#celltype颜色设置，与color set一致
+                                   showInter=F,#是否展示互作数目（节点颜色和大小是否设置为互作数目，False则代表节点设置为固定大小或celltype 细胞数）
+                                   celltype.size=F,#是否展示celltype数量。
+                                   scRNA=NULL,#做cellphonedb的seurat obj
+                                   cellanno=NULL,#celltype所在那一列metadata的列名
+                                   group.size=F)#默认大小
+
+{
+
+  requireNamespace("reshape2")
+  requireNamespace("ggplot2")
+  requireNamespace("ggraph")
+  requireNamespace("tidygraph")
+  requireNamespace("dplyr")
+  requireNamespace("igraph")
+
+  all_intr <- pval_data
+  col_start <- which(colnames(all_intr) == "classification")
+
+  intr_pairs <- all_intr$interacting_pair
+  all_intr <- t(all_intr[, -c(1:col_start)])
+  colnames(all_intr) <- intr_pairs
+  all_count <- reshape2::melt(all_intr)
+
+  all_count$significant <- all_count$value < significant
+
+  count1x <- all_count %>%
+    group_by(Var1) %>%
+    summarise(COUNT = sum(significant)) %>%
+    as.data.frame()
+
+
+  tmp <- lapply(count1x[, 1], function(x) strsplit(as.character(x), "\\|"))
+  tmp <- lapply(tmp, function(x) x[[1]])
+  tmp <- as.data.frame(do.call(rbind, tmp))
+  colnames(tmp) <- c("SOURCE", "TARGET")
+  count1x <- as.data.frame(cbind(count1x, tmp))
+  all_count <- count1x[, c("SOURCE", "TARGET", "COUNT")]
+
+
+
+  if (any(all_count$COUNT) > 0) {
+
+    count_mat <- reshape2::acast(SOURCE ~ TARGET, data = all_count, value.var = "COUNT")
+    count_mat[is.na(count_mat)] <- 0
+
+  }else{
+
+    stop("There are no significant results using p-value of: ", significant, call. = FALSE)
+
+  }
+
+  # return(count_mat)
+
+
+  #plot networks
+  plot_mat <- as.data.frame(count_mat)
+  sourecell <- which(colnames(plot_mat)==source_celltype)
+  plot_mat <- plot_mat[order(plot_mat[,sourecell], decreasing = TRUE),]
+
+
+  df <- data.frame(from = rep(source_celltype,nrow(plot_mat)),
+                   to = rownames(plot_mat),
+                   inter_num = plot_mat[,source_celltype])
+
+  #设置celltype颜色
+  if(is.null(color_set)){
+
+    color.use <- c("#D51F26","#272E6A","#208A42","#89288F","#F47D2B", "#FEE500","#8A9FD1","#C06CAB", "#D8A767",
+                   "#90D5E4", "#89C75F","#F37B7D","#9983BD","#D24B27","#3BBCA8", "#6E4B9E","#0C727C", "#7E1416")
+
+    color.use <- color.use[1:nrow(plot_mat)]
+    names(color.use) <- df$to
+
+  }else{
+
+    color.use <- color_set
+
+    if(is.null(celltype_order)){
+
+      names(color.use) <- df$to
+
+    }else{
+
+      names(color.use) <- celltype_order
+    }
+
+  }
+
+
+
+  #nodes
+  nodes <- data.frame(name = df$to)
+  nodes$inter_num <- df$inter_num
+
+
+  if(group.size==F){
+
+    size = rep(5, nrow(plot_mat))
+    nodes$size <- size
+
+  }else{
+
+    metadata <- wk1@meta.data
+    celltypesize = as.data.frame(table(metadata[,cellanno]))
+    colnames(celltypesize) <- c('name',"size")
+    nodes = merge(nodes, celltypesize, by='name', all=F)
+
+    nodes <- nodes[order(nodes[,"size"], decreasing = TRUE),]
+
+  }
+
+  #edge
+  edges <- df[c("from","to","inter_num")]
+
+  #network plot
+  net <- tbl_graph(nodes = nodes, edges = edges)
+
+  #plot
+  p=ggraph(net,layout='igraph', algorithm = 'circle') +
+    geom_edge_bend(mapping = aes(edge_width = inter_num),
+                   strength = 0.2,alpha = 0.8,
+                   flipped =F, edge_color = "#A9AAAA",
+                   n=50, show.legend = F,
+                   check_overlap =T)+
+    geom_edge_loop(aes(edge_width = inter_num,
+                       direction = (from - 1)*360 / length(net)),
+                   colour = "#A9AAAA",
+                   alpha = 0.5, show.legend = F)+
+    scale_edge_width_continuous(range = c(0,5))
+
+
+  if(showInter==F){
+
+
+    p = p+geom_node_point(aes(size=size,colour = name), show.legend = F) +
+      geom_node_point(aes(size=size), show.legend = F,
+                      shape=21,colour = 'black',stroke = 1.5)+
+      geom_node_text(aes(x = x*1.06, y=y*1.06, label=name),
+                     angle=0,hjust=0, size=3) + # 设置点的注释
+      scale_size_continuous(range = c(1, 15))+
+      scale_color_manual(values = color.use)+
+      theme_graph()+
+      theme(plot.margin = unit(c(2, 2, 2, 2), "cm"))
+
+  }else{
+
+    if(celltype.size==T){
+
+      p = p+geom_node_point(aes(size=size,colour = inter_num)) +
+        geom_node_point(aes(size=size), show.legend = F,
+                        shape=21,colour = 'black',stroke = 1.5)+
+        geom_node_text(aes(x = x*1.06, y=y*1.06, label=name),
+                       angle=0,hjust=0, fontface="bold",size=3) + # 设置点的注释
+        scale_color_gradientn(colors = colorRampPalette(c("#2166AC",'#478ABF','#90C0DC', "white",'#EF8C65','#CF4F45',"#B2182B"))(100))+
+        scale_size_continuous(range = c(1, 10))+
+        theme_graph()+
+        theme(plot.margin = unit(c(2, 2, 2, 2), "cm"))
+
+    }else{
+
+      p = p+geom_node_point(aes(size=inter_num,colour = inter_num)) +
+        geom_node_point(aes(size=inter_num), show.legend = F,
+                        shape=21,colour = 'black',stroke = 1.5)+
+        geom_node_text(aes(x = x*1.06, y=y*1.06, label=name),
+                       angle=0,hjust=0, fontface="bold",size=3) + # 设置点的注释
+        scale_color_gradientn(colors = colorRampPalette(c("#2166AC",'#478ABF','#90C0DC', "white",'#EF8C65','#CF4F45',"#B2182B"))(100))+
+        scale_size_continuous(range = c(1, 10))+
+        theme_graph()+
+        theme(plot.margin = unit(c(2, 2, 2, 2), "cm"))
+
+    }
+
+
+  }
+
+  return(p)
+
+
+}
+
+df<-as.data.frame(table(wk1$cell))
+df<-as.character(df$Var1)
+a<-list()
+count<-data.frame()
+for (i in 1:length(df)) {
+  a[[i]]<-ks_cpdb_sig_interCount(pval_data = sig_p,
+                                 significant=0.05,
+                                 source_celltype = df[[i]],
+                                 showInter=T,
+                                 celltype.size=T,
+                                 scRNA = wk1,
+                                 cellanno = 'cell',
+                                 group.size = T)
+  a[[i]][["data"]]$source<-df[[i]]
+  a[[i]][["data"]]$x<-NULL
+  a[[i]][["data"]]$y<-NULL
+  a[[i]][["data"]]$size<-NULL
+  a[[i]][["data"]]$.ggraph.orig_index<-NULL
+  a[[i]][["data"]]$circular<-NULL
+  a[[i]][["data"]]$.ggraph.index<-NULL
+  colnames(a[[i]][["data"]])<-c('TARGET','count','SOURCE')
+  count<-rbind(count,a[[i]][["data"]])
+}
+
+items <- unique(c(as.character(count$TARGET), as.character(count$SOURCE)))
+
+# Initialize an empty data frame to store the sums
+sums_df <- data.frame(TARGET = character(), count = numeric(), SOURCE = character())
+
+# Loop over each item and calculate the sums
+for(item in items) {
+  sum_count <- sum(count$count[count$TARGET == item | count$SOURCE == item])
+  sums_df <- rbind(sums_df, data.frame(TARGET = item, count = sum_count, SOURCE = "sum"))
+}
+
+sums_df <- sums_df[order(sums_df$TARGET),]
+
+##绘图
+library(tidyr)
+library(CellChat)
+df.net <- spread(count, TARGET, count)# 长数据变宽
+rownames(df.net) <- df.net$SOURCE
+df.net <- df.net[, -1]
+df.net <- as.matrix(df.net)
+netVisual_circle(df.net, vertex.weight = sums_df$count,
+                 weight.scale = T, label.edge= F,edge.width.max = 10,arrow.size=0.4,
+                 title.name = "Number of interactions")
+write.csv(count,file = 'count.csv')
+write.csv(sums_df,file = 'sum.csv')
+
+##热图
+library(tidyr)
+count_matrix<-spread(count, TARGET, count)
+rownames(count_matrix) <- count_matrix$SOURCE
+df <- count_matrix$SOURCE
+count_matrix <- count_matrix[, -1]
+rownames(count_matrix) <- df
+count_matrix <- as.matrix(count_matrix)
+
+library(pheatmap)
+pheatmap(count_matrix, show_rownames = T, show_colnames = T, scale="none", cluster_cols = T,
+         border_color='white', cluster_rows = T, fontsize_row = 14, fontsize_col = 14,
+         main = "", treeheight_row = 0, family = 'Arial',
+         color = colorRampPalette(c("dodgerblue4",'peachpuff','deeppink4' ))( 1000 ),
+         treeheight_col = 0,
+         fontsize_number=12,
+         number_format="%.0f", legend_labels = c(0,300))
+
+library(ktplots)
+sig_p <- read.delim("./statistical_analysis_pvalues.txt", check.names = F)
+plot_cpdb_heatmap(pvals=sig_p, degs_analysis=F, title="Sum of significant interactions")
+
+##折线图
+wk1<-tidyr::unite(wk1, "df", TARGET, SOURCE)
+wk1$time<-'1wk'
+wk2<-tidyr::unite(wk2, "df", TARGET, SOURCE)
+wk2$time<-'2wk'
+wk3<-tidyr::unite(wk3, "df", TARGET, SOURCE)
+wk3$time<-'3wk'
+mon8<-tidyr::unite(mon8, "df", TARGET, SOURCE)
+mon8$time<-'8mon'
+p<-tidyr::unite(p, "df", TARGET, SOURCE)
+p$time<-'p'
+ts<-tidyr::unite(ts, "df", TARGET, SOURCE)
+ts$time<-'ts'
+all<-rbind(p,wk1,wk2,wk3,mon8,ts)
+ggplot(all, aes(x = time, y = count,  color = df,group=df)) +
+  geom_point() +
+  geom_line() +
+  geom_hline(aes(yintercept=0), alpha = 0.65)+theme_classic()+scale_color_manual(values=c('steelblue1','#6cb8d2','slateblue3','chocolate1','tomato','orange2','palegreen3','turquoise','seagreen'))
+
+split_data <- strsplit(wk1$wk1, split = "_", fixed = TRUE)
+split_vector <- unlist(split_data)
+unique_split_vector <- unique(split_vector)
+wk1_gene <- data.frame(gene = unique_split_vector)
+gene =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,keys = clr_gene$gene,columns = 'ENTREZID',keytype = 'SYMBOL')[,2]))
+wk1_go <- enrichGO(gene, OrgDb = "org.Hs.eg.db", ont="BP")
+wk1_go=DOSE::setReadable(wk1_go, OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+wk1_ego <- simplify(clr_go, cutoff=0.7, by="p.adjust", select_fun=min)
+wk1_ego@result$class<-'wk1'
+wk1_ego<-subset(clr_ego@result,clr_ego@result$pvalue<0.05)
+go<-clr_ego[1:10,]
+go<-go[order(go$Count,decreasing = T),]
+go$Description<-factor(x=go$Description,levels = rev(go$Description))
+ggplot(go,aes(Count,Description))+geom_point(aes(size=Count,color=-1*log10(pvalue)))+scale_color_gradient(low="blue",high="red")+theme_bw()
+
+
+###Figure 6 TF
+###conserved TF
+library(tidyr)
+library(dplyr)
+library(stringr)
+tf1<-wk1$...1[3:387]
+tf2<-wk2$...1[3:284]
+tf3<-wk3$...1[3:339]
+tf8<-mon8$...1[3:276]
+int<-intersect(tf1,tf2)
+int<-intersect(int,tf3)
+int<-intersect(int,tf8)
+
+library('venn')
+library('VennDiagram')
+library('ggplot2')
+library('RColorBrewer')
+library('data.table')
+library(ggVennDiagram)
+df_list = list('1wk'=tf1,'2wk'=tf2,
+               '3wk'=tf3,'8mon'=tf8)
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+
+tfp<-p$...1[3:562]
+tf8<-mon8$...1[3:466]
+tfts<-ts$...1[3:398]
+df_list = list('p'=tfp,'8mon'=tf8,'ts'=tfts)
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+
+lung <- readRDS("E:/high adaption/analysis/rds/lung_adult.rds")
+data<-AverageExpression(lung,features = int)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+up<-subset(data,g1wk<g2wk & g2wk<g3wk & g3wk<g8mon)
+down<-subset(data,g1wk>g2wk & g2wk>g3wk & g3wk>g8mon)
+all<-rbind(up,down)
+all<-as.matrix(all)
+library(RColorBrewer)
+col <- colorRampPalette((brewer.pal(n = 9, name ="YlGnBu")))(100)
+Heatmap(all,col = col,row_order = order(as.numeric(gsub("row", "", rownames(all)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+
+#tf_target gene
+up<-rownames(up)
+wk1_up<-subset(wk1,wk1$...1%in%up)
+wk1_up$gene_names <- sapply(wk1_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk1_up <- wk1_up %>%
+  select(`...1`, gene_names)
+colnames(wk1_up)<-c('TF','gene')
+wk1_up <- wk1_up %>%
+  separate_rows(gene, sep = ",\\s*")
+wk1_up$class<-'wk1_up'
+
+down<-rownames(down)
+wk1_down<-subset(wk1,wk1$...1%in%down)
+wk1_down$gene_names <- sapply(wk1_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk1_down <- wk1_down %>%
+  select(`...1`, gene_names)
+colnames(wk1_down)<-c('TF','gene')
+wk1_down <- wk1_down %>%
+  separate_rows(gene, sep = ",\\s*")
+wk1_down$class<-'wk1_down'
+
+
+wk2_up<-subset(wk2,wk2$...1%in%up)
+wk2_up$gene_names <- sapply(wk2_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk2_up <- wk2_up %>%
+  select(`...1`, gene_names)
+colnames(wk2_up)<-c('TF','gene')
+wk2_up <- wk2_up %>%
+  separate_rows(gene, sep = ",\\s*")
+wk2_up$class<-'wk2_up'
+
+wk2_down<-subset(wk2,wk2$...1%in%down)
+wk2_down$gene_names <- sapply(wk2_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk2_down <- wk2_down %>%
+  select(`...1`, gene_names)
+colnames(wk2_down)<-c('TF','gene')
+wk2_down <- wk2_down %>%
+  separate_rows(gene, sep = ",\\s*")
+wk2_down$class<-'wk2_down'
+
+
+wk3_up<-subset(wk3,wk3$...1%in%up)
+wk3_up$gene_names <- sapply(wk3_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk3_up <- wk3_up %>%
+  select(`...1`, gene_names)
+colnames(wk3_up)<-c('TF','gene')
+wk3_up <- wk3_up %>%
+  separate_rows(gene, sep = ",\\s*")
+wk3_up$class<-'wk3_up'
+
+wk3_down<-subset(wk3,wk3$...1%in%down)
+wk3_down$gene_names <- sapply(wk3_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk3_down <- wk3_down %>%
+  select(`...1`, gene_names)
+colnames(wk3_down)<-c('TF','gene')
+wk3_down <- wk3_down %>%
+  separate_rows(gene, sep = ",\\s*")
+wk3_down$class<-'wk3_down'
+
+mon8_up<-subset(mon8,mon8$...1%in%up)
+mon8_up$gene_names <- sapply(mon8_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+mon8_up <- mon8_up %>%
+  select(`...1`, gene_names)
+colnames(mon8_up)<-c('TF','gene')
+mon8_up <- mon8_up %>%
+  separate_rows(gene, sep = ",\\s*")
+mon8_up$class<-'mon8_up'
+
+mon8_down<-subset(mon8,mon8$...1%in%down)
+mon8_down$gene_names <- sapply(mon8_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+mon8_down <- mon8_down %>%
+  select(`...1`, gene_names)
+colnames(mon8_down)<-c('TF','gene')
+mon8_down <- mon8_down %>%
+  separate_rows(gene, sep = ",\\s*")
+mon8_down$class<-'mon8_down'
+all<-rbind(wk1_up,wk2_up,wk3_up,mon8_up,wk1_down,wk2_down,wk3_down,mon8_down)
+write.csv(all,file='tf_target_gene.csv')
+
+
+###TF-DEGs
+#up_tf_regulated
+int<-intersect(wk1_up$gene,wk2_up$gene)
+int<-intersect(int,wk3_up$gene)
+int<-intersect(int,mon8_up$gene)
+wk1_up<-subset(wk1_up,wk1_up$gene%in%int)
+wk2_up<-subset(wk2_up,wk2_up$gene%in%int)
+wk3_up<-subset(wk3_up,wk3_up$gene%in%int)
+mon8_up<-subset(mon8_up,mon8_up$gene%in%int)
+tf_up<-rbind(wk1_up,wk2_up,wk3_up,mon8_up)
+
+data<-AverageExpression(lung,features = int)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+up<-subset(data,g1wk<g2wk & g2wk<g3wk & g3wk<g8mon)
+down<-subset(data,g1wk>g2wk & g2wk>g3wk & g3wk>g8mon)
+
+wk1_up_tf1<-subset(wk1_up,wk1_up$gene%in%rownames(up))
+wk2_up_tf1<-subset(wk2_up,wk2_up$gene%in%rownames(up))
+wk3_up_tf1<-subset(wk3_up,wk3_up$gene%in%rownames(up))
+mon8_up_tf1<-subset(mon8_up,mon8_up$gene%in%rownames(up))
+tf_gene_up1<-rbind(wk1_up_tf1,wk2_up_tf1,wk3_up_tf1,mon8_up_tf1)
+tf_gene_up1$class<-'up_regulated_gene'
+wk1_up_tf2<-subset(wk1_up,wk1_up$gene%in%rownames(down))
+wk2_up_tf2<-subset(wk2_up,wk2_up$gene%in%rownames(down))
+wk3_up_tf2<-subset(wk3_up,wk3_up$gene%in%rownames(down))
+mon8_up_tf2<-subset(mon8_up,mon8_up$gene%in%rownames(down))
+tf_gene_down1<-rbind(wk1_up_tf2,wk2_up_tf2,wk3_up_tf2,mon8_up_tf2)
+tf_gene_down1$class<-'down_regulated_gene'
+tf_gene<-rbind(tf_gene_up1,tf_gene_down1)
+write.csv(tf_gene,file = 'lung_up_tf_gene.csv')
+
+#down_tf_regulated
+int<-intersect(wk1_down$gene,wk2_down$gene)
+int<-intersect(int,wk3_down$gene)
+int<-intersect(int,mon8_down$gene)
+wk1_down<-subset(wk1_down,wk1_down$gene%in%int)
+wk2_down<-subset(wk2_down,wk2_down$gene%in%int)
+wk3_down<-subset(wk3_down,wk3_down$gene%in%int)
+mon8_down<-subset(mon8_down,mon8_down$gene%in%int)
+tf_down<-rbind(wk1_down,wk2_down,wk3_down,mon8_down)
+
+data<-AverageExpression(lung,features = int)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+up<-subset(data,g1wk<g2wk & g2wk<g3wk & g3wk<g8mon)
+down<-subset(data,g1wk>g2wk & g2wk>g3wk & g3wk>g8mon)
+
+wk1_down_tf1<-subset(wk1_down,wk1_down$gene%in%rownames(up))
+wk2_down_tf1<-subset(wk2_down,wk2_down$gene%in%rownames(up))
+wk3_down_tf1<-subset(wk3_down,wk3_down$gene%in%rownames(up))
+mon8_down_tf1<-subset(mon8_down,mon8_down$gene%in%rownames(up))
+tf_gene_up1<-rbind(wk1_down_tf1,wk2_down_tf1,wk3_down_tf1,mon8_down_tf1)
+tf_gene_up1$class<-'up_regulated_gene'
+wk1_down_tf2<-subset(wk1_down,wk1_down$gene%in%rownames(down))
+wk2_down_tf2<-subset(wk2_down,wk2_down$gene%in%rownames(down))
+wk3_down_tf2<-subset(wk3_down,wk3_down$gene%in%rownames(down))
+mon8_down_tf2<-subset(mon8_down,mon8_down$gene%in%rownames(down))
+tf_gene_down1<-rbind(wk1_down_tf2,wk2_down_tf2,wk3_down_tf2,mon8_down_tf2)
+tf_gene_down1$class<-'down_regulated_gene'
+tf_gene<-rbind(tf_gene_up1,tf_gene_down1)
+write.csv(tf_gene,file = 'lung_down_tf_gene.csv')
+
+##specific TF
+tfp<-p$...1[3:593]
+tf8<-mon8$...1[3:432]
+tfts<-ts$...1[3:488]
+tf_p <- as.data.frame(setdiff(tfp, union(tf8, tfts)))
+tf_8 <- as.data.frame(setdiff(tf8, union(tfp, tfts)))
+tf_ts <- as.data.frame(setdiff(tfts, union(tf8, tfp)))
+lung <- readRDS("E:/high adaption/analysis/rds/lung_adult.rds")
+colnames(tf_p)<-'gene'
+colnames(tf_8)<-'gene'
+colnames(tf_ts)<-'gene'
+all<-rbind(tf_p,tf_8,tf_ts)
+Idents(lung)<-lung$time
+sp<-subset(lung,idents=c('plain','8 mon','Tibetan'))
+sp@active.ident<-factor(sp@active.ident,levels = c('plain','8 mon','Tibetan'))
+
+data<-AverageExpression(sp,features = tf_p$gene)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+plain<-subset(data,plain>0 & g8mon<0 & Tibetan<0)
+
+data<-AverageExpression(sp,features = tf_8$gene)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+mon8<-subset(data,plain<0 & g8mon>0 & Tibetan<0)
+
+data<-AverageExpression(sp,features = tf_ts$gene)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+tibetan<-subset(data,plain<0 & g8mon<0 & Tibetan>0)
+
+all<-rbind(plain,mon8,tibetan)
+data<-AverageExpression(sp,features = rownames(all))
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+col <- colorRampPalette((brewer.pal(n = 9, name ="YlGnBu")))(100)
+Heatmap(data,col=col,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+library(circlize)
+col_fun=colorRamp2(c(-2,0,2),c("#ABD9E9","white","#D73027"))
+Heatmap(data,col = col_fun,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+t<-t(all)
+Heatmap(t,col=col,row_order = order(as.numeric(gsub("row", "", rownames(t)))),cluster_columns = F,cluster_rows  = F,show_row_names = T)
+
+
+
+##the state of tf and gene on cell levels
+lung <- readRDS("E:/high adaption/analysis/rds/lung_adult.rds")
+ad<-subset(lung,idents=c('1wk','2wk','3wk','8 mon'))
+lung$time<-lung@active.ident
+Idents(lung)<-lung$cluster_full
+lung$time<-factor(lung$time,levels = c('1wk','2wk','3wk','8 mon'))
+lung_up_tf_gene <- read_csv("E:/high adaption/analysis/scenic/lung_up_tf_gene.csv")
+lung_down_tf_gene <- read_csv("E:/high adaption/analysis/scenic/lung_down_tf_gene.csv")
+
+##up_tf
+up_tf<-as.character(unique(lung_up_tf_gene$TF))
+data<-AverageExpression(lung,features = up_tf,add.ident = 'time')
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+t<-t(data)
+col_fun=colorRamp2(c(-2,0,2),c("#ABD9E9","white","#D73027"))
+Heatmap(data,col = col_fun,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+df<-melt(t)
+##tf对应到细胞类型上
+df_separated <- df %>%
+  separate(Var1, into = c("cell_type", "time_period"), sep = "_") %>%
+  mutate(time_index = match(time_period, c("1wk", "2wk", "3wk", "8 mon"))) %>%
+  arrange(cell_type, time_index)
+# 定义一个函数来检查值是否递增
+is_increasing <- function(x) {
+  all(diff(x) > 0)
+}
+# 应用该函数到每个细胞类型的每个基因上
+increasing_trends <- df_separated %>%
+  group_by(cell_type, Var2) %>%
+  summarise(is_increasing = is_increasing(value), .groups = 'drop') %>%
+  filter(is_increasing)
+# 提取表达量增加的细胞类型的原始数据
+increasing_data <- df_separated %>%
+  right_join(increasing_trends, by = c("cell_type", "Var2"))
+write.csv(increasing_data,file = 'lung_up_tf_cell.csv')
+
+##target gene对应到细胞类型
+up_gene<-as.character(unique(lung_up_tf_gene$gene))
+data<-AverageExpression(lung,features = up_gene,add.ident = 'time')
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+t<-t(data)
+col_fun=colorRamp2(c(-2,0,2),c("#ABD9E9","white","#D73027"))
+Heatmap(data,col = col_fun,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+df<-melt(t)
+df_separated <- df %>%
+  separate(Var1, into = c("cell_type", "time_period"), sep = "_") %>%
+  mutate(time_index = match(time_period, c("1wk", "2wk", "3wk", "8 mon"))) %>%
+  arrange(cell_type, time_index)
+# 递增
+is_increasing <- function(x) {
+  all(diff(x) > 0)
+}
+# 应用该函数到每个细胞类型的每个基因上
+increasing_trends <- df_separated %>%
+  group_by(cell_type, Var2) %>%
+  summarise(is_increasing = is_increasing(value), .groups = 'drop') %>%
+  filter(is_increasing)
+# 提取表达量增加的细胞类型的原始数据
+increasing_data <- df_separated %>%
+  right_join(increasing_trends, by = c("cell_type", "Var2"))
+increasing_data$class<-'up'
+write.csv(increasing_data,file = 'lung_up_tf_gene_up_cell.csv')
+
+# 递减
+is_increasing <- function(x) {
+  all(diff(x) < 0)
+}
+# 应用该函数到每个细胞类型的每个基因上
+increasing_trends <- df_separated %>%
+  group_by(cell_type, Var2) %>%
+  summarise(is_increasing = is_increasing(value), .groups = 'drop') %>%
+  filter(is_increasing)
+# 提取表达量增加的细胞类型的原始数据
+increasing_data <- df_separated %>%
+  right_join(increasing_trends, by = c("cell_type", "Var2"))
+increasing_data$class<-'down'
+write.csv(increasing_data,file = 'lung_up_tf_gene_down_cell.csv')
+
+
+
+
+##down_tf
+down_tf<-as.character(unique(lung_down_tf_gene$TF))
+data<-AverageExpression(lung,features = down_tf,add.ident = 'time')
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+t<-t(data)
+col_fun=colorRamp2(c(-2,0,2),c("#ABD9E9","white","#D73027"))
+Heatmap(data,col = col_fun,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+df<-melt(t)
+##tf对应到细胞类型上
+df_separated <- df %>%
+  separate(Var1, into = c("cell_type", "time_period"), sep = "_") %>%
+  mutate(time_index = match(time_period, c("1wk", "2wk", "3wk", "8 mon"))) %>%
+  arrange(cell_type, time_index)
+# 定义一个函数来检查值是否递增
+is_decreasing <- function(x) {
+  all(diff(x) < 0)
+}
+# 应用该函数到每个细胞类型的每个基因上
+decreasing_trends <- df_separated %>%
+  group_by(cell_type, Var2) %>%
+  summarise(is_decreasing = is_decreasing(value), .groups = 'drop') %>%
+  filter(is_decreasing)
+# 提取表达量增加的细胞类型的原始数据
+decreasing_data <- df_separated %>%
+  right_join(decreasing_trends, by = c("cell_type", "Var2"))
+write.csv(decreasing_data,file = 'lung_down_tf_cell.csv')
+
+
+##target gene对应到细胞类型
+up_gene<-as.character(unique(lung_down_tf_gene$gene))
+data<-AverageExpression(lung,features = up_gene,add.ident = 'time')
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+t<-t(data)
+col_fun=colorRamp2(c(-2,0,2),c("#ABD9E9","white","#D73027"))
+Heatmap(data,col = col_fun,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+df<-melt(t)
+df_separated <- df %>%
+  separate(Var1, into = c("cell_type", "time_period"), sep = "_") %>%
+  mutate(time_index = match(time_period, c("1wk", "2wk", "3wk", "8 mon"))) %>%
+  arrange(cell_type, time_index)
+# 递增
+is_increasing <- function(x) {
+  all(diff(x) > 0)
+}
+# 应用该函数到每个细胞类型的每个基因上
+increasing_trends <- df_separated %>%
+  group_by(cell_type, Var2) %>%
+  summarise(is_increasing = is_increasing(value), .groups = 'drop') %>%
+  filter(is_increasing)
+# 提取表达量增加的细胞类型的原始数据
+increasing_data <- df_separated %>%
+  right_join(increasing_trends, by = c("cell_type", "Var2"))
+increasing_data$class<-'up'
+write.csv(increasing_data,file = 'lung_down_tf_gene_up_cell.csv')
+
+# 递减
+is_increasing <- function(x) {
+  all(diff(x) < 0)
+}
+# 应用该函数到每个细胞类型的每个基因上
+increasing_trends <- df_separated %>%
+  group_by(cell_type, Var2) %>%
+  summarise(is_increasing = is_increasing(value), .groups = 'drop') %>%
+  filter(is_increasing)
+# 提取表达量增加的细胞类型的原始数据
+increasing_data <- df_separated %>%
+  right_join(increasing_trends, by = c("cell_type", "Var2"))
+increasing_data$class<-'down'
+write.csv(increasing_data,file = 'lung_down_tf_gene_down_cell.csv')
+
+
+##桑基图
+library(ggplot2)
+library(ggalluvial)
+library(dplyr)
+library(tidyr)
+df_unique <- unique(df)
+all$TF <- as.character(all$TF)
+all$gene <- as.character(all$gene)
+all$cell_type <- as.character(all$cell_type)
+all$class <- as.factor(all$class)
+all$freq<-'1'
+all$freq <- as.numeric(all$freq)
+ggplot(data = all,
+       aes(axis1 = TF, axis2 = gene, axis3 = cell_type, y = freq)) +
+  geom_alluvium(aes(fill = class)) +
+  geom_stratum() +
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  scale_fill_manual(values = c("up" = '#ff999a',"down" = '#9bd9ff')) +
+  theme_minimal()+theme_classic()
+
+###hdWGCNA
+cur_genes <- hypoxia$`response to hypoxia`
+cur_genes <- cur_genes[cur_genes %in% modules$gene_name]
+
+# subset the TOM
+cur_TOM <- TOM[cur_genes,cur_genes]
+# set up the graph object with igraph & tidygraph
+graph <- cur_TOM %>%
+  igraph::graph_from_adjacency_matrix(mode='undirected', weighted=TRUE) %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# make the plot with ggraph
+p <- ggraph(graph) +
+  geom_edge_link(color='grey', alpha=0.2) +
+  geom_node_point(color='black') +
+  geom_node_label(aes(label=name), repel=TRUE, max.overlaps=Inf, fontface='italic')
+p
+# set up the graph object with igraph & tidygraph
+graph <- cur_TOM %>%
+  igraph::graph_from_adjacency_matrix(mode='undirected', weighted=TRUE) %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# make the plot with gggraph
+p <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight), color='grey') +
+  geom_node_point(aes(color=module)) +
+  geom_node_label(aes(label=name), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  scale_colour_manual(values=mod_cp)
+p
+# only keep the upper triangular part of the TOM:
+cur_TOM[upper.tri(cur_TOM)] <- NA
+
+# cast the network from wide to long format
+cur_network <- cur_TOM %>%
+  reshape2::melt() %>%
+  dplyr::rename(gene1 = Var1, gene2 = Var2, weight=value) %>%
+  subset(!is.na(weight))
+
+# get the module & color info for gene1
+temp1 <- dplyr::inner_join(
+  cur_network,
+  modules %>%
+    dplyr::select(c(gene_name, module, color)) %>%
+    dplyr::rename(gene1 = gene_name, module1=module, color1=color),
+  by = 'gene1'
+) %>% dplyr::select(c(module1, color1))
+
+# get the module & color info for gene2
+temp2 <- dplyr::inner_join(
+  cur_network,
+  modules %>%
+    dplyr::select(c(gene_name, module, color)) %>%
+    dplyr::rename(gene2 = gene_name, module2=module, color2=color),
+  by = 'gene2'
+) %>% dplyr::select(c(module2, color2))
+
+# add the module & color info
+cur_network <- cbind(cur_network, temp1, temp2)
+
+# set the edge color to the module's color if they are the two genes are in the same module
+cur_network$edge_color <- ifelse(
+  cur_network$module1 == cur_network$module2,
+  as.character(cur_network$module1),
+  'grey'
+)
+
+# keep this network before subsetting
+cur_network_full <- cur_network
+
+# keep the top 10% of edges
+edge_percent <- 0.1
+cur_network <- cur_network_full %>%
+  dplyr::slice_max(
+    order_by = weight,
+    n = round(nrow(cur_network)*edge_percent)
+  )
+
+# make the graph object with tidygraph
+graph <- cur_network %>%
+  igraph::graph_from_data_frame() %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# get the top 25 hub genes for each module
+hub_genes <- GetHubGenes(seurat_obj, n_hubs=25) %>% .$gene_name
+V(graph)$hub <- ifelse(V(graph)$name %in% hub_genes, V(graph)$name, "")
+
+# make the plot with gggraph
+p <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp)
+
+p
+# subset to only keep edges between genes in the same module
+cur_network <- cur_network_full %>%
+  subset(module1 == module2)
+
+# make the graph object with tidygraph
+graph <- cur_network %>%
+  igraph::graph_from_data_frame() %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# get the top 25 hub genes for each module
+hub_genes <- GetHubGenes(seurat_obj, n_hubs=25) %>% .$gene_name
+V(graph)$hub <- ifelse(V(graph)$name %in% hub_genes, V(graph)$name, "")
+
+# make the plot with gggraph
+p <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  NoLegend()
+
+p
+# randomly sample 50% of the edges within the same module
+cur_network1 <- cur_network_full %>%
+  subset(module1 == module2) %>%
+  group_by(module1) %>%
+  sample_frac(0.5) %>%
+  ungroup()
+
+# keep the top 10% of other edges
+edge_percent <- 0.10
+cur_network2 <- cur_network_full %>%
+  subset(module1 != module2) %>%
+  dplyr::slice_max(
+    order_by = weight,
+    n = round(nrow(cur_network)*edge_percent)
+  )
+
+cur_network <- rbind(cur_network1, cur_network2)
+
+# set factor levels for edges:
+cur_network$edge_color <- factor(
+  as.character(cur_network$edge_color),
+  levels = c(mods, 'grey')
+)
+
+# rearrange so grey edges are on the bottom:
+cur_network %<>% arrange(rev(edge_color))
+
+# make the graph object with tidygraph
+graph <- cur_network %>%
+  igraph::graph_from_data_frame() %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# get the top 25 hub genes for each module
+hub_genes <- GetHubGenes(seurat_obj, n_hubs=25) %>% .$gene_name
+V(graph)$hub <- ifelse(V(graph)$name %in% hub_genes, V(graph)$name, "")
+
+# 1. default layout
+p1 <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout = 'stress' (auto)") +
+  NoLegend()
+
+# 2. Kamada Kawai (kk) layout
+graph2 <- graph; E(graph)$weight <- E(graph)$weight + 0.0001
+p2 <- ggraph(graph, layout='kk', maxiter=100) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout = 'kk'") +
+  NoLegend()
+
+# 3. igraph layout_with_fr
+p3 <- ggraph(graph, layout=layout_with_fr(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_with_fr()") +
+  NoLegend()
+
+# 4. igraph layout_as_tree
+p4 <- ggraph(graph, layout=layout_as_tree(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_as_tree()") +
+  NoLegend()
+
+# 5. igraph layout_nicely
+p5 <- ggraph(graph, layout=layout_nicely(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_nicely()") +
+  NoLegend()
+
+# 6. igraph layout_in_circle
+p6 <- ggraph(graph, layout=layout_in_circle(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_in_circle()") +
+  NoLegend()
+
+
+# make a combined plot
+(p1 | p2 | p3) / (p4 | p5 | p6)
+
+# get the UMAP df and subset by genes that are in our graph
+umap_df <- GetModuleUMAP(seurat_obj)
+umap_layout <- umap_df[names(V(graph)),] %>% dplyr::rename(c(x=UMAP1, y = UMAP2, name=gene))
+rownames(umap_layout) <- 1:nrow(umap_layout)
+
+# create the layout
+lay <- ggraph::create_layout(graph, umap_layout)
+lay$hub <- V(graph)$hub
+
+p <- ggraph(lay) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(data=subset(lay, hub == ''), aes(color=module, size=kME)) +
+  geom_node_point(data=subset(lay, hub != ''), aes(fill=module, size=kME), color='black', shape=21) +
+  scale_colour_manual(values=mod_cp) +
+  scale_fill_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  NoLegend()
+
+
+p
+ggraph(lay) +
+  ggrastr::rasterise(
+    geom_point(inherit.aes=FALSE, data=umap_df, aes(x=UMAP1, y=UMAP2), color=umap_df$color, alpha=0.1, size=1),
+    dpi=500
+  ) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(data=subset(lay, hub == ''), aes(fill=module, size=kME), color='black', shape=21) +
+  geom_node_point(data=subset(lay, hub != ''), aes(fill=module, size=kME), color='black', shape=23) +
+  scale_colour_manual(values=mod_cp) +
+  scale_fill_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  NoLegend()
+
+
+##palantir
+
+library(Seurat)
+library(Matrix)
+seurat_to_adata <- function(object,#seurat对象
+                            Dimension=c('UMAP','TSNE'),#降维方式
+                            path){#文件保存路径
+  seurat_obj <- object
+  seurat_obj$barcode <- colnames(seurat_obj)
+  if(Dimension=='UMAP'){
+    cell.embeddings<- seurat_obj@reductions$umap@cell.embeddings
+    seurat_obj$UMAP_1 <- cell.embeddings[,1]
+    seurat_obj$UMAP_2 <- cell.embeddings[,2]
+  }else{
+
+    cell.embeddings<- seurat_obj@reductions$tsne@cell.embeddings
+    seurat_obj$TSNE_1 <- cell.embeddings[,1]
+    seurat_obj$TSNE_2 <- cell.embeddings[,2]
+  }
+  #保存metadat
+  write.csv(seurat_obj@meta.data, file=paste0(path,'metadata.csv'), quote=F, row.names=F)
+  #保存matrix
+  counts_matrix <- GetAssayData(seurat_obj, assay='RNA', slot='counts')
+  writeMM(counts_matrix, file=paste0(path, 'counts.mtx'))
+  #PCA降维信息
+  write.csv(seurat_obj@reductions$pca@cell.embeddings, file=paste0(path,'pca.csv'), quote=F,row.names=F)
+
+  #保存gene name
+  write.table(data.frame('gene'=rownames(counts_matrix)),file=paste0(path,'gene_names.csv'),
+              quote=F,row.names=F,col.names=F)
+}
+
+#运行
+seurat_to_adata(endmt,Dimension='UMAP',path = './')
+###python
+import palantir
+import scanpy as sc
+import pandas as pd
+import os
+
+# Plotting
+import matplotlib
+import matplotlib.pyplot as plt
+
+# warnings
+import warnings
+from numba.core.errors import NumbaDeprecationWarning
+
+warnings.filterwarnings(action="ignore", category=NumbaDeprecationWarning)
+warnings.filterwarnings(
+  action="ignore", module="scanpy", message="No data for colormapping"
+)
+import scanpy as sc
+import anndata
+from scipy import io
+from scipy.sparse import coo_matrix, csr_matrix
+import numpy as np
+import os
+import pandas as pd
+sc.settings.verbosity = 0
+sc.logging.print_versions()
+sc.settings.set_figure_params(dpi=80, facecolor='white')
+def seurat_to_adata(counts,#R中导出的counts.mtx文件
+                    meta,#R中导出的metadata.csv文件
+                    gene_name,#R中导出的gene_names.csv文件
+                    pca,#R中导出的pca.csv文件
+                    obsm,
+                    reduction1,#TSNE数据为TSNE_1，UMAP数据为UMAP_1
+                    reduction2):#TSNE数据为TSNE_2，UMAP数据为UMAP_2
+  # 加载表达矩阵
+  X = io.mmread(counts)
+# 创建anndata
+adata = anndata.AnnData(X=X.transpose().tocsr())
+cell_meta = pd.read_csv(meta)#metadata
+with open(gene_name, 'r') as f:gene_names = f.read().splitlines()
+adata.obs = cell_meta
+adata.obs.index = adata.obs['barcode']
+adata.var.index = gene_names
+pca = pd.read_csv(pca)
+pca.index = adata.obs.index
+adata.obsm['X_pca'] = pca.to_numpy()
+adata.obsm[obsm] = np.vstack((adata.obs[reduction1].to_numpy(), adata.obs[reduction2].to_numpy())).T
+return adata
+os.chdir('./')
+ad=seurat_to_adata(counts='./counts.mtx',
+                   meta='./metadata.csv',
+                   gene_name='./gene_names.csv',
+                   pca='./pca.csv',
+                   obsm='X_umap',
+                   reduction1='UMAP_1',reduction2='UMAP_2')
+dm_res = palantir.utils.run_diffusion_maps(ad, n_components=5)
+ms_data = palantir.utils.determine_multiscale_space(ad)
+imputed_X = palantir.utils.run_magic_imputation(ad)
+terminal_states = pd.Series(
+  ["EndMT"],
+  index=["GCACGGTCAACTGTGT-1_6_15"],
+)
+start_cell = "GAATAGAAGAGGCGTT-1_1_15"
+pr_res = palantir.core.run_palantir(
+  ad, start_cell, num_waypoints=500, terminal_states=terminal_states
+)
+palantir.plot.plot_palantir_results(ad, s=3)
+plt.savefig("A1.pdf")
+
+
+###offspring
+df<-as.data.frame(table(lung$cell))
+df<-as.character(df$Var1)
+ts_p<-list()
+sa_p<-list()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    sa_p[[i]] <- FindMarkers(lung,ident.1 = "8 mon_young", ident.2 = "plain_young", group.by = "time",
+                             subset.ident = df[[i]], min.pct = 0.25,
+                             logfc.threshold = 0.25 )
+    ts_p[[i]] <- FindMarkers(lung,ident.1 = "Tibetan_young", ident.2 = "plain_young", group.by = "time",
+                             subset.ident = df[[i]], min.pct = 0.25,
+                             logfc.threshold = 0.25 )
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+result <- data.frame(Category = character(), Proportion = numeric(), Dataset = character())
+
+# 创建一个用于存储每个数据集的交集比例的列表
+intersection_values <- numeric(length(sa_p))
+
+# 遍历每对数据框
+for (i in seq_along(sa_p)) {
+  df1 <- sa_p[[i]]
+  df2 <- ts_p[[i]]
+
+  # 获取行名
+  rownames1 <- rownames(df1)
+  rownames2 <- rownames(df2)
+
+  # 计算交集
+  intersection <- intersect(rownames1, rownames2)
+
+  # 计算各自独有的元素
+  only_in_sa_p <- setdiff(rownames1, rownames2)
+  only_in_ts_p <- setdiff(rownames2, rownames1)
+
+  # 计算总数量
+  total_count <- length(intersection) + length(only_in_sa_p) + length(only_in_ts_p)
+
+  # 计算各类别的比例
+  intersection_proportion <- length(intersection) / total_count
+  only_in_sa_p_proportion <- length(only_in_sa_p) / total_count
+  only_in_ts_p_proportion <- length(only_in_ts_p) / total_count
+
+  # 存储每个数据集的交集比例
+  intersection_values[i] <- intersection_proportion
+
+  # 将结果添加到数据框中，并使用细胞类型作为 Dataset 列的值
+  result <- rbind(result, data.frame(
+    Category = c("Only in ts_p", "Intersection", "Only in sa_p"),
+    Proportion = c(only_in_ts_p_proportion, intersection_proportion, only_in_sa_p_proportion),
+    Dataset = df[i]  # 使用细胞类型名称作为标识
+  ))
+}
+
+# 按交集大小对细胞类型进行排序
+sorted_order <- order(intersection_values, decreasing = TRUE)
+sorted_cell_types <- df[sorted_order]
+
+# 将 Dataset 列设置为因子，并按照新的顺序排序
+result$Dataset <- factor(result$Dataset, levels = sorted_cell_types)
+
+# 将 Category 列设置为因子，并指定绘图的顺序
+result$Category <- factor(result$Category, levels = c("Intersection","Only in ts_p", "Only in sa_p"))
+
+ggplot(result, aes(x = Dataset, y = Proportion, fill = Category)) +
+  geom_bar(stat = "identity", position = "fill") +scale_fill_manual(values = c('#93B5CF','#F7F4ED','#FBB957'))+theme_classic()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 10,color="black"),
+  )
+
+
+##gene name
+intersection_result <- data.frame(CellType = character(), Gene = character())
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    df1 <- sa_p_down[[i]]
+    df2 <- ts_p_down[[i]]
+    rownames1 <- rownames(df1)
+    rownames2 <- rownames(df2)
+    intersection <- intersect(rownames1, rownames2)
+    cell_type <- df[i]
+    intersection_result <- rbind(intersection_result, data.frame(CellType = cell_type, Gene = intersection))
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+lung_down_gene<-intersection_result
+
+lung_up_sum$class<-'lung'
+lung_up_sum$class<-'lung'
+lung_up_sum$class<-'lung'
+all<-rbind(lung_up_sum,lung_up_sum,lung_up_sum)
+all<-tidyr::unite(all, "cell", Dataset, class)
+sorted_df <- all %>%
+       group_by(cell) %>%
+       summarize(Total = sum(Value)) %>%
+       arrange(desc(Total))
+all$cell <- factor(all$cell, levels = sorted_df$cell)
+
+lung_down_sum$class<-'lung'
+lung_down_sum$class<-'lung'
+lung_down_sum$class<-'lung'
+all<-rbind(lung_down_sum,lung_down_sum,lung_down_sum)
+all<-tidyr::unite(all, "cell", Dataset, class)
+sorted_df <- all %>%
+  group_by(cell) %>%
+  summarize(Total = sum(Value)) %>%
+  arrange(desc(Total))
+all$cell <- factor(all$cell, levels = sorted_df$cell)
+
+lung_up_gene$class<-'lung'
+lung_up_gene$class<-'lung'
+lung_up_gene$class<-'lung'
+all<-rbind(lung_up_gene,lung_up_gene,lung_up_gene)
+all<-tidyr::unite(all, "cell",CellType, class)
+df<-as.data.frame(table(all$cell))
+df<-df$Var1
+
+
+##radio
+tmp <- data.frame(x = rep(1, 3),
+                  y = rep(1, 3),
+                  group = colnames(lung_ho)[-1])
+p2<-ggradar(
+  lung_ho,
+  axis.labels = rep(NA, 3),
+  grid.min = 0, grid.mid = 1.5, grid.max = 3,
+  # 雷达图线的粗细和颜色：
+  group.line.width = 1,
+  group.point.size =3,
+  group.colours = c("#75BDE0", "#F8D49B", "#fb7e96", "#F89B9B"),
+  # 背景边框线颜色
+  background.circle.colour = "white",
+  gridline.mid.colour = "#2b8c96",
+  legend.position = "none",
+  # 不加坐标轴标签：
+  label.gridline.min = F,
+  label.gridline.mid = F,
+  label.gridline.max = F
+)+ theme(plot.background = element_blank(),
+         panel.background = element_blank())
+
+p1<-ggplot()+
+  # 圆环：
+  geom_bar(data = tmp, aes(x, y, fill = group), stat = "identity", position = "dodge")+
+  # geom_text(aes(x, y, label = gsub("[.]", " ", df$group), group = group),
+  #           color = "white",
+  #           position = position_dodge(width = 0.3))+
+  scale_fill_manual(values = c("#F0A1A8","#F9F4DC","#C3D7DF"))+
+  ylim(-5.5,2)+
+  # 0.63是计算得来，5个色块，第一个色块的正中心要对准0的位置，
+  # 所以2pi/10=0.628即为第一个色块左边界的位置
+  coord_polar(start=1)+
+  theme_void()+
+  theme(legend.position = "none")
+
+library(patchwork)
+
+p1 + inset_element(p2, left = 0, bottom = 0, right = 0.99, top = 0.99)
+
+ggradar(
+  lung_ho,
+  axis.labels = rep(NA, 3),
+  grid.min = 0, grid.mid = 1.5, grid.max = 3,
+  # 雷达图线的粗细和颜色：
+  group.line.width = 1,
+  group.point.size =3,
+  group.colours = c("#75BDE0", "#F8D49B", "#fb7e96", "#F89B9B"),
+  # 背景边框线颜色
+  background.circle.colour = "white",
+  gridline.mid.colour = "#2b8c96",
+  # 不加坐标轴标签：
+  label.gridline.min = F,
+  label.gridline.mid = F,
+  label.gridline.max = F
+)+ theme(plot.background = element_blank(),
+         panel.background = element_blank())
+
+###score
+DefaultAssay(heart)<-'RNA'
+heart  <- AddModuleScore(heart , features=markers)
+p<-list()
+df<-list()
+all<-data.frame()
+for (i in 1:length(a)) {
+  p[[i]]=VlnPlot(heart ,a[[i]])
+  colnames(p[[i]][[1]]$data)<-c('value','cell')
+  df[[i]] = aggregate(p[[i]][[1]]$data$value,list(p[[i]][[1]]$data$cell),median)
+  df[[i]]$class<-c[[i]]
+  all<-rbind(all,df[[i]])
+}
+all$class<-gsub(" ","_",all$class)
+all <- all %>% filter(class != "excessive_erythrocytosis")
+##lung
+all<-subset(all,all$class%in%c('Severe_acute_mountain_sickness','pulmonary_hypertension','pulmonary_edema','hypoxic_pulmonary_disase','high_blood_hemoglobin_concentration','Chronic_mountain_sickness'))
+##heart
+all<-subset(all,all$class%in%c('Severe_acute_mountain_sickness','high_blood_hemoglobin_concentration','heart_failure','congenital_heart_disease','Chronic_mountain_sickness','Chronic_heart_failure','Atrial_fibrillation'))
+
+
+
+colnames(all)<-c('cell','val','class')
+all<-subset(all,all$x>0)
+all<-as.data.frame(table(all$Group.1))
+all<-as.character(all$Var1)
+
+
+all%>%ggplot(aes(x=Group.1,y=class,fill=x))+geom_tile()+
+  scale_x_discrete(expand = c(0,0))+
+  scale_fill_gradient2(low = "#0da9ce",mid = "white",high = "#e74a32")+
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 12,color="black"),
+  )
+
+ggboxplot(marker_score@meta.data, x="time", y="Cluster6", width = 0.6,
+          color = "black",#轮廓颜色
+          fill="time",#填充
+          #palette =c("#E7B800", "#00AFBB"),#分组着色
+          xlab = F, #不显示x轴的标签
+          bxp.errorbar=T,#显示误差条
+          bxp.errorbar.width=0.5, #误差条大小
+          size=1, #箱型图边线的粗细
+          outlier.shape=NA, #不显示outlier
+          legend = "right")
+
+mypal <- pal_npg("nrc", alpha = 1)(6)
+qq<-subset(lung,idents = 'Oligodendrocytes precursor cell')
+qq$time<-factor(qq$time,levels = c('plain','1wk','2wk','3wk','8 mon','Tibetan'))
+ggboxplot(qq@meta.data, x="time", y="Cluster1", width = 0.6,
+          color = "black",#轮廓颜色
+          fill="time",#填充
+          palette =mypal,
+          #palette =c("#E7B800", "#00AFBB"),#分组着色
+          xlab = F, #不显示x轴的标签
+          bxp.errorbar=T,#显示误差条
+          bxp.errorbar.width=0.5, #误差条大小
+          size=1, #箱型图边线的粗细
+          outlier.shape=NA, #不显示outlier
+          legend = "right")
+ggboxplot(qq@meta.data, x="time", y="Cluster11", width = 0.6,
+          color = "black",#轮廓颜色
+          fill="time",#填充
+          palette =mypal,
+          #palette =c("#E7B800", "#00AFBB"),#分组着色
+          xlab = F, #不显示x轴的标签
+          bxp.errorbar=T,#显示误差条
+          bxp.errorbar.width=0.5, #误差条大小
+          size=1, #箱型图边线的粗细
+          outlier.shape=NA, #不显示outlier
+          legend = "right")
+ggboxplot(qq@meta.data, x="time", y="Cluster12", width = 0.6,
+          color = "black",#轮廓颜色
+          fill="time",#填充
+          palette =mypal,
+          #palette =c("#E7B800", "#00AFBB"),#分组着色
+          xlab = F, #不显示x轴的标签
+          bxp.errorbar=T,#显示误差条
+          bxp.errorbar.width=0.5, #误差条大小
+          size=1, #箱型图边线的粗细
+          outlier.shape=NA, #不显示outlier
+          legend = "right")
+
+
+
+
+FeaturePlot_scCustom(seurat_object = lung, reduction = 'umap',
+                     colors_use = colorRampPalette(c("#3288BD", "white", "#D53E4F" ))(50),
+                     features = 'Cluster13',split.by = 'time',ncol=2)
+
+
+
+
+p=VlnPlot(heart,'Cluster4')
+df = aggregate(p$data$Cluster4,list(p$data$ident),median)
+colnames(heart_cell)<-c('cell','maj','col')
+colnames(df)<-c('cell','score')
+all<-left_join(heart_cell,df)
+all <- all %>% arrange(desc(score))
+all$cell<-factor(all$cell,levels = all$cell)
+ggplot(all,aes(cell,score,fill=cell))+geom_bar(stat="identity")+theme_classic()+scale_fill_manual(values=all$col)+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+  )
+
+for (i in 1:high_corgene){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    p <- ggplot(t_exp,aes_string(x = target_gene,y = i)) +
+      geom_point(size = 2,color = '#EC0101',alpha = 0.5) +
+      theme_bw() +
+      # 主题细节调整
+      theme(axis.title = element_text(size = 16),
+            axis.text = element_text(size = 14),
+            axis.ticks.length = unit(0.25,'cm'),
+            axis.ticks = element_line(size = 1),
+            panel.border = element_rect(size = 1.5),
+            panel.grid = element_blank()
+      ) +
+      # 添加回归线
+      geom_smooth(method = 'lm',se = T,color = '#F9B208',size = 1.5,fill = '#FEA82F') +
+      # 添加相关性系数及p值
+      stat_cor(method = "pearson",digits = 3,size=6)
+
+    # 添加边际柱形密度图
+    p1 <- ggMarginal(p,type = "densigram",
+                     xparams = list(binwidth = 0.1, fill = "#B3E283",size = .7),
+                     yparams = list(binwidth = 0.1, fill = "#8AB6D6",size = .7))
+
+    # 保存在list里
+    plotlst[[i]] <- p1
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+allplot <- plot_grid(plotlist = plotlst,ncol = 6 ,align = "hv")
+
+
+###火山图
+df<-as.data.frame(table(lung$cell))
+df<-as.character(df$Var1)
+e <- list()
+all <- data.frame()
+for (i in 1:length(df)){
+       tryCatch({
+             # 尝试执行可能会失败的代码
+               e[[i]] <- FindMarkers(lung, ident.1 = "Tibetan", ident.2 = "plain", group.by = "time",
+                                                                     subset.ident = df[[i]], min.pct = 0.25,
+                                                                     logfc.threshold = 0.25)
+               e[[i]]$cluster <- df[[i]]
+               all <- rbind(all, e[[i]])
+           }, error = function(e) {
+                 # 如果发生错误，这里的代码将会被执行
+                   # 你可以决定在这里执行什么操作，比如打印一个警告信息
+                   warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+             })
+}
+all$gene<-rownames(all)
+int<-intersect(all$gene,gene$gene)
+jjVolcano(diffData = all,tile.col = lung_cell$col,myMarkers = int,fontface = 'italic', cluster.order = unique(all$cluster),size=3.5)
+
+
+
+
+

@@ -1839,11 +1839,6 @@ write.csv(all_reversing_kegg_table,file = 'all_reversing_kegg_table.csv')
 ggplot(go,aes(Count,Description))+geom_point(aes(size=Count,color=-1*log10(pvalue)))+scale_color_gradient(low="blue",high="red")+theme_bw()
 
 
-rev3 <- pairwise_termsim(reversing_go[[3]])
-rein3 <- pairwise_termsim(reinforcing_go[[3]])
-
-treeplot(rev3,showCategory=50,nCluster = 6)
-treeplot(rein3,showCategory=50,nCluster = 6)
 
 
 

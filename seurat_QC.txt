@@ -1,0 +1,40 @@
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(clustree)
+library(BiocParallel)
+library(BPCells)
+library(ggplot2)
+register(BPPARAM = MulticoreParam(workers = 6))
+options(future.globals.maxSize = 1e9)
+merged[["RNA5"]] <- as(object = merged[["RNA"]], Class = "Assay5")
+DefaultAssay(merged)
+Assays(merged)
+merged[["RNA_seuratv4"]] <-  merged[['RNA']]
+merged[['RNA']]=merged[['RNA5']]
+merged <- NormalizeData(merged)
+merged <- FindVariableFeatures(merged)
+merged <- SketchData(merged,
+                     ncells = 50000,
+                     method = "LeverageScore",
+                     sketched.assay = "sketch"
+)
+DefaultAssay(merged) <- "sketch"
+merged <- NormalizeData(merged)
+merged <- FindVariableFeatures(merged)
+merged <- ScaleData(merged)
+merged <- RunPCA(merged)
+##harmony
+library(harmony)
+system.time({merged <- RunHarmony(merged, group.by.vars = "orig.ident")})
+merged <- RunUMAP(merged, reduction = "harmony", dims = 1:30)
+merged <- FindNeighbors(merged, reduction = "harmony", dims = 1:30)
+merged <- FindClusters(merged, resolution = 0.01)
+DimPlot(merged, reduction = "umap", label=T)
+DimPlot(merged, reduction = "umap", group.by='orig.ident')
+merged <- ProjectIntegration(merged, sketched.assay = "sketch", assay = "RNA", reduction = "harmony")
+merged <- ProjectData(merged, sketched.assay = "sketch", assay = "RNA", sketched.reduction = "harmony.full",
+                      full.reduction = "harmony.full", dims = 1:30)
+DimPlot(merged, label = T, label.size = 3, reduction = "umap")
+DimPlot(merged, label = F, label.size = 3, reduction = "umap", group.by = "orig.ident")
+saveRDS(pbmc, file = "lung.rds")

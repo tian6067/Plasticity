@@ -1,0 +1,265 @@
+###hdWGCNA
+cur_genes <- hypoxia$`response to hypoxia`
+cur_genes <- cur_genes[cur_genes %in% modules$gene_name]
+
+# subset the TOM
+cur_TOM <- TOM[cur_genes,cur_genes]
+# set up the graph object with igraph & tidygraph
+graph <- cur_TOM %>%
+  igraph::graph_from_adjacency_matrix(mode='undirected', weighted=TRUE) %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# make the plot with ggraph
+p <- ggraph(graph) +
+  geom_edge_link(color='grey', alpha=0.2) +
+  geom_node_point(color='black') +
+  geom_node_label(aes(label=name), repel=TRUE, max.overlaps=Inf, fontface='italic')
+p
+# set up the graph object with igraph & tidygraph
+graph <- cur_TOM %>%
+  igraph::graph_from_adjacency_matrix(mode='undirected', weighted=TRUE) %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# make the plot with gggraph
+p <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight), color='grey') +
+  geom_node_point(aes(color=module)) +
+  geom_node_label(aes(label=name), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  scale_colour_manual(values=mod_cp)
+p
+# only keep the upper triangular part of the TOM:
+cur_TOM[upper.tri(cur_TOM)] <- NA
+
+# cast the network from wide to long format
+cur_network <- cur_TOM %>%
+  reshape2::melt() %>%
+  dplyr::rename(gene1 = Var1, gene2 = Var2, weight=value) %>%
+  subset(!is.na(weight))
+
+# get the module & color info for gene1
+temp1 <- dplyr::inner_join(
+  cur_network,
+  modules %>%
+    dplyr::select(c(gene_name, module, color)) %>%
+    dplyr::rename(gene1 = gene_name, module1=module, color1=color),
+  by = 'gene1'
+) %>% dplyr::select(c(module1, color1))
+
+# get the module & color info for gene2
+temp2 <- dplyr::inner_join(
+  cur_network,
+  modules %>%
+    dplyr::select(c(gene_name, module, color)) %>%
+    dplyr::rename(gene2 = gene_name, module2=module, color2=color),
+  by = 'gene2'
+) %>% dplyr::select(c(module2, color2))
+
+# add the module & color info
+cur_network <- cbind(cur_network, temp1, temp2)
+
+# set the edge color to the module's color if they are the two genes are in the same module
+cur_network$edge_color <- ifelse(
+  cur_network$module1 == cur_network$module2,
+  as.character(cur_network$module1),
+  'grey'
+)
+
+# keep this network before subsetting
+cur_network_full <- cur_network
+
+# keep the top 10% of edges
+edge_percent <- 0.1
+cur_network <- cur_network_full %>%
+  dplyr::slice_max(
+    order_by = weight,
+    n = round(nrow(cur_network)*edge_percent)
+  )
+
+# make the graph object with tidygraph
+graph <- cur_network %>%
+  igraph::graph_from_data_frame() %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# get the top 25 hub genes for each module
+hub_genes <- GetHubGenes(seurat_obj, n_hubs=25) %>% .$gene_name
+V(graph)$hub <- ifelse(V(graph)$name %in% hub_genes, V(graph)$name, "")
+
+# make the plot with gggraph
+p <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp)
+
+p
+# subset to only keep edges between genes in the same module
+cur_network <- cur_network_full %>%
+  subset(module1 == module2)
+
+# make the graph object with tidygraph
+graph <- cur_network %>%
+  igraph::graph_from_data_frame() %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# get the top 25 hub genes for each module
+hub_genes <- GetHubGenes(seurat_obj, n_hubs=25) %>% .$gene_name
+V(graph)$hub <- ifelse(V(graph)$name %in% hub_genes, V(graph)$name, "")
+
+# make the plot with gggraph
+p <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  NoLegend()
+
+p
+# randomly sample 50% of the edges within the same module
+cur_network1 <- cur_network_full %>%
+  subset(module1 == module2) %>%
+  group_by(module1) %>%
+  sample_frac(0.5) %>%
+  ungroup()
+
+# keep the top 10% of other edges
+edge_percent <- 0.10
+cur_network2 <- cur_network_full %>%
+  subset(module1 != module2) %>%
+  dplyr::slice_max(
+    order_by = weight,
+    n = round(nrow(cur_network)*edge_percent)
+  )
+
+cur_network <- rbind(cur_network1, cur_network2)
+
+# set factor levels for edges:
+cur_network$edge_color <- factor(
+  as.character(cur_network$edge_color),
+  levels = c(mods, 'grey')
+)
+
+# rearrange so grey edges are on the bottom:
+cur_network %<>% arrange(rev(edge_color))
+
+# make the graph object with tidygraph
+graph <- cur_network %>%
+  igraph::graph_from_data_frame() %>%
+  tidygraph::as_tbl_graph(directed=FALSE) %>%
+  tidygraph::activate(nodes)
+
+# add the module name to the graph:
+V(graph)$module <- modules[V(graph)$name,'module']
+
+# get the top 25 hub genes for each module
+hub_genes <- GetHubGenes(seurat_obj, n_hubs=25) %>% .$gene_name
+V(graph)$hub <- ifelse(V(graph)$name %in% hub_genes, V(graph)$name, "")
+
+# 1. default layout
+p1 <- ggraph(graph) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout = 'stress' (auto)") +
+  NoLegend()
+
+# 2. Kamada Kawai (kk) layout
+graph2 <- graph; E(graph)$weight <- E(graph)$weight + 0.0001
+p2 <- ggraph(graph, layout='kk', maxiter=100) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout = 'kk'") +
+  NoLegend()
+
+# 3. igraph layout_with_fr
+p3 <- ggraph(graph, layout=layout_with_fr(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_with_fr()") +
+  NoLegend()
+
+# 4. igraph layout_as_tree
+p4 <- ggraph(graph, layout=layout_as_tree(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_as_tree()") +
+  NoLegend()
+
+# 5. igraph layout_nicely
+p5 <- ggraph(graph, layout=layout_nicely(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_nicely()") +
+  NoLegend()
+
+# 6. igraph layout_in_circle
+p6 <- ggraph(graph, layout=layout_in_circle(graph)) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(aes(color=module)) +
+  scale_colour_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  ggtitle("layout_in_circle()") +
+  NoLegend()
+
+
+# make a combined plot
+(p1 | p2 | p3) / (p4 | p5 | p6)
+
+# get the UMAP df and subset by genes that are in our graph
+umap_df <- GetModuleUMAP(seurat_obj)
+umap_layout <- umap_df[names(V(graph)),] %>% dplyr::rename(c(x=UMAP1, y = UMAP2, name=gene))
+rownames(umap_layout) <- 1:nrow(umap_layout)
+
+# create the layout
+lay <- ggraph::create_layout(graph, umap_layout)
+lay$hub <- V(graph)$hub
+
+p <- ggraph(lay) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(data=subset(lay, hub == ''), aes(color=module, size=kME)) +
+  geom_node_point(data=subset(lay, hub != ''), aes(fill=module, size=kME), color='black', shape=21) +
+  scale_colour_manual(values=mod_cp) +
+  scale_fill_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  NoLegend()
+
+
+p
+ggraph(lay) +
+  ggrastr::rasterise(
+    geom_point(inherit.aes=FALSE, data=umap_df, aes(x=UMAP1, y=UMAP2), color=umap_df$color, alpha=0.1, size=1),
+    dpi=500
+  ) +
+  geom_edge_link(aes(alpha=weight, color=edge_color)) +
+  geom_node_point(data=subset(lay, hub == ''), aes(fill=module, size=kME), color='black', shape=21) +
+  geom_node_point(data=subset(lay, hub != ''), aes(fill=module, size=kME), color='black', shape=23) +
+  scale_colour_manual(values=mod_cp) +
+  scale_fill_manual(values=mod_cp) +
+  scale_edge_colour_manual(values=mod_cp) +
+  geom_node_label(aes(label=hub), repel=TRUE, max.overlaps=Inf, fontface='italic') +
+  NoLegend()
+

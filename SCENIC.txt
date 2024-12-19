@@ -1,0 +1,523 @@
+###Figure 6 TF
+###conserved TF
+library(tidyr)
+library(dplyr)
+library(stringr)
+tf1<-wk1$...1[3:387]
+tf2<-wk2$...1[3:284]
+tf3<-wk3$...1[3:339]
+tf8<-mon8$...1[3:276]
+int<-intersect(tf1,tf2)
+int<-intersect(int,tf3)
+int<-intersect(int,tf8)
+
+library('venn')
+library('VennDiagram')
+library('ggplot2')
+library('RColorBrewer')
+library('data.table')
+library(ggVennDiagram)
+df_list = list('1wk'=tf1,'2wk'=tf2,
+               '3wk'=tf3,'8mon'=tf8)
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+
+tfp<-p$...1[3:562]
+tf8<-mon8$...1[3:466]
+tfts<-ts$...1[3:398]
+df_list = list('p'=tfp,'8mon'=tf8,'ts'=tfts)
+ggVennDiagram(df_list) + scale_fill_gradient(low="grey90",high = "tomato")
+
+lung <- readRDS("E:/high adaption/analysis/rds/lung_adult.rds")
+data<-AverageExpression(lung,features = int)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+up<-subset(data,g1wk<g2wk & g2wk<g3wk & g3wk<g8mon)
+down<-subset(data,g1wk>g2wk & g2wk>g3wk & g3wk>g8mon)
+all<-rbind(up,down)
+all<-as.matrix(all)
+library(RColorBrewer)
+col <- colorRampPalette((brewer.pal(n = 9, name ="YlGnBu")))(100)
+Heatmap(all,col = col,row_order = order(as.numeric(gsub("row", "", rownames(all)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+
+#tf_target gene
+up<-rownames(up)
+wk1_up<-subset(wk1,wk1$...1%in%up)
+wk1_up$gene_names <- sapply(wk1_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk1_up <- wk1_up %>%
+  select(`...1`, gene_names)
+colnames(wk1_up)<-c('TF','gene')
+wk1_up <- wk1_up %>%
+  separate_rows(gene, sep = ",\\s*")
+wk1_up$class<-'wk1_up'
+
+down<-rownames(down)
+wk1_down<-subset(wk1,wk1$...1%in%down)
+wk1_down$gene_names <- sapply(wk1_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk1_down <- wk1_down %>%
+  select(`...1`, gene_names)
+colnames(wk1_down)<-c('TF','gene')
+wk1_down <- wk1_down %>%
+  separate_rows(gene, sep = ",\\s*")
+wk1_down$class<-'wk1_down'
+
+
+wk2_up<-subset(wk2,wk2$...1%in%up)
+wk2_up$gene_names <- sapply(wk2_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk2_up <- wk2_up %>%
+  select(`...1`, gene_names)
+colnames(wk2_up)<-c('TF','gene')
+wk2_up <- wk2_up %>%
+  separate_rows(gene, sep = ",\\s*")
+wk2_up$class<-'wk2_up'
+
+wk2_down<-subset(wk2,wk2$...1%in%down)
+wk2_down$gene_names <- sapply(wk2_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk2_down <- wk2_down %>%
+  select(`...1`, gene_names)
+colnames(wk2_down)<-c('TF','gene')
+wk2_down <- wk2_down %>%
+  separate_rows(gene, sep = ",\\s*")
+wk2_down$class<-'wk2_down'
+
+
+wk3_up<-subset(wk3,wk3$...1%in%up)
+wk3_up$gene_names <- sapply(wk3_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk3_up <- wk3_up %>%
+  select(`...1`, gene_names)
+colnames(wk3_up)<-c('TF','gene')
+wk3_up <- wk3_up %>%
+  separate_rows(gene, sep = ",\\s*")
+wk3_up$class<-'wk3_up'
+
+wk3_down<-subset(wk3,wk3$...1%in%down)
+wk3_down$gene_names <- sapply(wk3_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+wk3_down <- wk3_down %>%
+  select(`...1`, gene_names)
+colnames(wk3_down)<-c('TF','gene')
+wk3_down <- wk3_down %>%
+  separate_rows(gene, sep = ",\\s*")
+wk3_down$class<-'wk3_down'
+
+mon8_up<-subset(mon8,mon8$...1%in%up)
+mon8_up$gene_names <- sapply(mon8_up$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+mon8_up <- mon8_up %>%
+  select(`...1`, gene_names)
+colnames(mon8_up)<-c('TF','gene')
+mon8_up <- mon8_up %>%
+  separate_rows(gene, sep = ",\\s*")
+mon8_up$class<-'mon8_up'
+
+mon8_down<-subset(mon8,mon8$...1%in%down)
+mon8_down$gene_names <- sapply(mon8_down$`Enrichment...9`, function(x) {
+  genes <- unlist(str_extract_all(x, "[A-Z]+[A-Z0-9]*")) # 使用正则表达式提取基因名
+  paste(genes, collapse = ", ") # 将基因名合并成一个由逗号分隔的字符串
+})
+mon8_down <- mon8_down %>%
+  select(`...1`, gene_names)
+colnames(mon8_down)<-c('TF','gene')
+mon8_down <- mon8_down %>%
+  separate_rows(gene, sep = ",\\s*")
+mon8_down$class<-'mon8_down'
+all<-rbind(wk1_up,wk2_up,wk3_up,mon8_up,wk1_down,wk2_down,wk3_down,mon8_down)
+write.csv(all,file='tf_target_gene.csv')
+
+
+###TF-DEGs
+#up_tf_regulated
+int<-intersect(wk1_up$gene,wk2_up$gene)
+int<-intersect(int,wk3_up$gene)
+int<-intersect(int,mon8_up$gene)
+wk1_up<-subset(wk1_up,wk1_up$gene%in%int)
+wk2_up<-subset(wk2_up,wk2_up$gene%in%int)
+wk3_up<-subset(wk3_up,wk3_up$gene%in%int)
+mon8_up<-subset(mon8_up,mon8_up$gene%in%int)
+tf_up<-rbind(wk1_up,wk2_up,wk3_up,mon8_up)
+
+data<-AverageExpression(lung,features = int)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+up<-subset(data,g1wk<g2wk & g2wk<g3wk & g3wk<g8mon)
+down<-subset(data,g1wk>g2wk & g2wk>g3wk & g3wk>g8mon)
+
+wk1_up_tf1<-subset(wk1_up,wk1_up$gene%in%rownames(up))
+wk2_up_tf1<-subset(wk2_up,wk2_up$gene%in%rownames(up))
+wk3_up_tf1<-subset(wk3_up,wk3_up$gene%in%rownames(up))
+mon8_up_tf1<-subset(mon8_up,mon8_up$gene%in%rownames(up))
+tf_gene_up1<-rbind(wk1_up_tf1,wk2_up_tf1,wk3_up_tf1,mon8_up_tf1)
+tf_gene_up1$class<-'up_regulated_gene'
+wk1_up_tf2<-subset(wk1_up,wk1_up$gene%in%rownames(down))
+wk2_up_tf2<-subset(wk2_up,wk2_up$gene%in%rownames(down))
+wk3_up_tf2<-subset(wk3_up,wk3_up$gene%in%rownames(down))
+mon8_up_tf2<-subset(mon8_up,mon8_up$gene%in%rownames(down))
+tf_gene_down1<-rbind(wk1_up_tf2,wk2_up_tf2,wk3_up_tf2,mon8_up_tf2)
+tf_gene_down1$class<-'down_regulated_gene'
+tf_gene<-rbind(tf_gene_up1,tf_gene_down1)
+write.csv(tf_gene,file = 'lung_up_tf_gene.csv')
+
+#down_tf_regulated
+int<-intersect(wk1_down$gene,wk2_down$gene)
+int<-intersect(int,wk3_down$gene)
+int<-intersect(int,mon8_down$gene)
+wk1_down<-subset(wk1_down,wk1_down$gene%in%int)
+wk2_down<-subset(wk2_down,wk2_down$gene%in%int)
+wk3_down<-subset(wk3_down,wk3_down$gene%in%int)
+mon8_down<-subset(mon8_down,mon8_down$gene%in%int)
+tf_down<-rbind(wk1_down,wk2_down,wk3_down,mon8_down)
+
+data<-AverageExpression(lung,features = int)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+data$plain<-NULL
+data$Tibetan<-NULL
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+up<-subset(data,g1wk<g2wk & g2wk<g3wk & g3wk<g8mon)
+down<-subset(data,g1wk>g2wk & g2wk>g3wk & g3wk>g8mon)
+
+wk1_down_tf1<-subset(wk1_down,wk1_down$gene%in%rownames(up))
+wk2_down_tf1<-subset(wk2_down,wk2_down$gene%in%rownames(up))
+wk3_down_tf1<-subset(wk3_down,wk3_down$gene%in%rownames(up))
+mon8_down_tf1<-subset(mon8_down,mon8_down$gene%in%rownames(up))
+tf_gene_up1<-rbind(wk1_down_tf1,wk2_down_tf1,wk3_down_tf1,mon8_down_tf1)
+tf_gene_up1$class<-'up_regulated_gene'
+wk1_down_tf2<-subset(wk1_down,wk1_down$gene%in%rownames(down))
+wk2_down_tf2<-subset(wk2_down,wk2_down$gene%in%rownames(down))
+wk3_down_tf2<-subset(wk3_down,wk3_down$gene%in%rownames(down))
+mon8_down_tf2<-subset(mon8_down,mon8_down$gene%in%rownames(down))
+tf_gene_down1<-rbind(wk1_down_tf2,wk2_down_tf2,wk3_down_tf2,mon8_down_tf2)
+tf_gene_down1$class<-'down_regulated_gene'
+tf_gene<-rbind(tf_gene_up1,tf_gene_down1)
+write.csv(tf_gene,file = 'lung_down_tf_gene.csv')
+
+##specific TF
+tfp<-p$...1[3:593]
+tf8<-mon8$...1[3:432]
+tfts<-ts$...1[3:488]
+tf_p <- as.data.frame(setdiff(tfp, union(tf8, tfts)))
+tf_8 <- as.data.frame(setdiff(tf8, union(tfp, tfts)))
+tf_ts <- as.data.frame(setdiff(tfts, union(tf8, tfp)))
+lung <- readRDS("E:/high adaption/analysis/rds/lung_adult.rds")
+colnames(tf_p)<-'gene'
+colnames(tf_8)<-'gene'
+colnames(tf_ts)<-'gene'
+all<-rbind(tf_p,tf_8,tf_ts)
+Idents(lung)<-lung$time
+sp<-subset(lung,idents=c('plain','8 mon','Tibetan'))
+sp@active.ident<-factor(sp@active.ident,levels = c('plain','8 mon','Tibetan'))
+
+data<-AverageExpression(sp,features = tf_p$gene)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+plain<-subset(data,plain>0 & g8mon<0 & Tibetan<0)
+
+data<-AverageExpression(sp,features = tf_8$gene)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+mon8<-subset(data,plain<0 & g8mon>0 & Tibetan<0)
+
+data<-AverageExpression(sp,features = tf_ts$gene)
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+tibetan<-subset(data,plain<0 & g8mon<0 & Tibetan>0)
+
+all<-rbind(plain,mon8,tibetan)
+data<-AverageExpression(sp,features = rownames(all))
+data<-data$RNA
+data <- t(scale(t(data),scale = T,center = T))
+data<-as.data.frame(data)
+colnames(data)<-gsub('g8 mon','g8mon',colnames(data))
+col <- colorRampPalette((brewer.pal(n = 9, name ="YlGnBu")))(100)
+Heatmap(data,col=col,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+library(circlize)
+col_fun=colorRamp2(c(-2,0,2),c("#ABD9E9","white","#D73027"))
+Heatmap(data,col = col_fun,row_order = order(as.numeric(gsub("row", "", rownames(data)))),cluster_columns = F,cluster_rows  = T,show_row_names = T)
+t<-t(all)
+Heatmap(t,col=col,row_order = order(as.numeric(gsub("row", "", rownames(t)))),cluster_columns = F,cluster_rows  = F,show_row_names = T)
+
+
+#===============================================================================
+# 2、calculate CSI
+#===============================================================================
+library(SCopeLoomR)
+library(AUCell)
+library(SCENIC)
+regulon <- read.csv("auc.csv", header = T, row.names = 1, check.names = F)
+CSI_matrix_cal <- function(regulon,
+                           CSI_threshold,
+                           module_k,
+                           module_color=F,
+                           Heatmap_col=NULL,
+                           legend_parm = c("number","character"),
+                           rect_color,
+                           label_reg=NULL){
+
+  #calculate CSI
+
+  Mcor<-cor(regulon)
+  n<-nrow(Mcor)
+
+  CSI<-matrix(nrow=n,ncol=n)
+
+  for (i in 1:n){
+    for(j in 1:n){
+
+      if(i==j) {
+
+        CSI[i,j] <- 1
+
+      } else{
+
+        nodeA <- names(which(Mcor[i,]>= Mcor[i,j]-0.05))
+        nodeB <- names(which(Mcor[,j]>= Mcor[i,j]-0.05))
+        CSI[i,j]<- 1-((length(unique(c(nodeA,nodeB))))/n)
+
+      }
+
+    }
+
+  }
+
+  rownames(CSI)<-colnames(regulon)
+  colnames(CSI)<-colnames(regulon)
+
+  CSI_matrix <- as.data.frame(CSI)
+  write.csv(CSI_matrix, file = './CSI_matrix.csv')
+
+
+  #Heatmap-draw
+  require(ComplexHeatmap)
+  require(pheatmap)
+
+  CSI[CSI <= CSI_threshold]=0
+
+
+  if(is.null(Heatmap_col)){
+
+    col<-colorRampPalette(c("white","#D73027"))(100)
+
+  }else{
+
+    col = Heatmap_col
+
+  }
+
+
+  x=pheatmap::pheatmap(CSI,
+                       color=col,
+                       clustering_method = "ward.D2",
+                       show_rownames=FALSE,
+                       show_colnames = FALSE,
+                       cutree_rows = module_k,
+                       cutree_cols = module_k)
+
+
+  annotation_row <- data.frame(Cluster=factor(cutree(x$tree_row, module_k)))
+  annotation_col <- data.frame(Cluster=factor(cutree(x$tree_col, module_k)))
+
+  row_order <- annotation_row
+  row_order$regulon <- rownames(row_order)
+  row_order <- row_order[order(row_order$Cluster),]
+  write.csv(row_order, file = "./Module.csv")
+
+
+  anno_col = annotation_col
+  anno_col$TF <- rownames(anno_col)
+
+  index <- x$tree_col$order
+  TFs <- x$tree_col$labels
+  ord_TF <- c()
+  for (i in index) {
+
+    ord_TF <- append(ord_TF, TFs[i])
+
+  }
+
+  anno_col <- anno_col[ord_TF,]
+  anno_col$Modules <- paste0("Module",anno_col$Cluster)
+
+
+
+  if(module_color==F){
+
+    calm = c("#7DD06F", "#844081", "#688EC1", "#C17E73", "#484125",
+            "#6CD3A7", "#597873","#7B6FD0", "#CF4A31", "#D0CD47",
+            "#722A2D", "#CBC594", "#D19EC4", "#5A7E36", "#D4477D",
+            "#403552", "#76D73C", "#96CED5", "#CE54D1", "#C48736")
+
+    module_num <- unique(anno_col$Cluster)
+    cluster_color = setNames(calm[1:module_k],module_num)
+
+
+
+  }else{
+
+
+    module_num <- unique(anno_col$Cluster)
+    cluster_color = setNames(module_color,module_num)
+
+
+  }
+
+
+  cluster_color_m <- as.data.frame(cluster_color)
+  cluster_color_m$Modules <- paste0("Module",rownames(cluster_color_m))
+  rownames(cluster_color_m) <- cluster_color_m$Modules
+
+
+  if(legend_parm == "number"){
+
+    heatmap_legend_param = list(color_bar = "continuous",
+                                legend_direction = "vertical",
+                                legend_width = unit(1, "cm"),
+                                legend_height = unit(5, "cm"),
+                                title = "Connection specificity index (CSI)",
+                                title_position="leftcenter-rot",
+                                border ="black",
+                                at = c(0,0.2,0.4,0.6,0.8,1),
+                                labels = c(0,0.2,0.4,0.6,0.8,1),
+                                labels_gp = gpar(fontsize = 8,col='black',font = 3))
+
+  }
+
+
+  if(legend_parm == "character"){
+
+    heatmap_legend_param = list(color_bar = "continuous",
+                                legend_direction = "vertical",
+                                legend_width = unit(1, "cm"),
+                                legend_height = unit(5, "cm"),
+                                title = "Connection specificity index (CSI)",
+                                title_position="leftcenter-rot",
+                                border ="black",
+                                at = c(0,0.5,1),
+                                labels = c("low","mid","high"),
+                                labels_gp = gpar(fontsize = 8,col='black',font = 3))
+  }
+
+
+
+
+
+  hm = ComplexHeatmap::pheatmap(CSI, #ph$tree_row$order
+                          annotation_row=annotation_row,
+                          annotation_col=annotation_col,
+                          clustering_method = "ward.D2",
+                          show_rownames=T,
+                          show_colnames = FALSE,
+                          color=col,
+                          name = "ht",
+                          treeheight_row = 20,
+                          treeheight_col = 20,
+                          annotation_names_col = F,
+                          annotation_names_row = F,
+                          annotation_legend=F,
+                          annotation_colors= list(Cluster = cluster_color),
+                          heatmap_legend_param = heatmap_legend_param)
+
+
+  if(!is.null(label_reg)){
+
+   label_reg <- label_reg
+   index <- which(rownames(CSI)%in% label_reg)
+   customRowLabel <- rownames(CSI)[index]
+
+   hm <- hm+rowAnnotation(anno = anno_mark(at = index,
+                                 labels = customRowLabel,
+                                 side = "right",
+                                 padding = unit(2, "mm"),
+                                 link_width = unit(3, "mm"),
+                                 extend = unit(0.1, "mm"),
+                                 labels_gp = gpar(fontsize = 8),
+                                 link_gp = gpar(col='black',lwd=1)))
+
+  }
+
+
+  draw(hm)
+
+  ord = anno_col$Cluster
+  dup = (which(!duplicated(ord)) - 1)
+  fract = dup / nrow(anno_col)
+  width =  c(fract[-1], 1) - fract
+
+  decorate_heatmap_body("ht", {
+    grid.rect(unit(fract, "native"),
+              unit(1-fract, "native"),
+              unit(width, "native"),
+              unit(width, "native"),
+              hjust = 0,
+              vjust = 1,
+              gp = gpar(col = rect_color, lty = 1, lwd = 2, fill=NA))
+  })
+
+
+  label_m <- unique(anno_col$Modules)
+  cluster_color_m <- cluster_color_m[label_m, ]
+
+  decorate_heatmap_body("ht", {
+
+
+    grid.text(label_m,
+              unit(fract+0.25, "native"),
+              unit(1-fract-0.05, "native"),
+              gp=gpar(fontsize=15, col=cluster_color_m$cluster_color, fontface="bold"))
+
+  })
+
+
+  return(hm)
+}
+
+
+
+# module_TF <- CSI_matrix_cal(regulon = regulon,
+#                             CSI_threshold = 0.5,
+#                             module_k = 6,
+#                             legend_parm = "number",
+#                             rect_color="red",
+#                             label_reg = label_reg)
+# module_TF
+
+pdf('module3.pdf', width=8, height=6)
+module_TF <- CSI_matrix_cal(regulon = data,
+                            CSI_threshold = 0.7,
+                            module_k = 10,
+                            legend_parm = "number",
+                            rect_color="red")
+draw(module_TF)
+dev.off()

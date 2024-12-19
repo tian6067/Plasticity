@@ -1,0 +1,332 @@
+from diisco import DIISCO
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+%matplotlib inline
+import seaborn as sns
+import torch
+torch.set_default_dtype(torch.float64)
+
+from diisco import DIISCO
+import diisco.names as names
+
+df = pd.read_csv('brain_cell.csv')
+df.index = df.iloc[:,0]
+df
+df=df.iloc[:,1:]
+df.iloc[:, :21].sum(axis=1)
+cell_types = [
+    'Alveolar type 2 cell', 'Smooth muscle cell', 'Alveolar type 1 cell', 'Ciliated Cell',
+    'Alveolar macrophage', 'Serous cell', 'Capillaries endothelial', 'Mesothelial Cell',
+    'Lymphatic endothelial', 'Fibroblast', 'Tuft cell', 'B plasma',
+    'Mast', 'Basal cell', 'Dendritic cell', 'Goblet cell',
+    'Monocyte', 'CD8-T', 'CD4-T', 'Neutrophils', 'B'
+]
+
+cell_types= [
+    'Cardiomyocytes1', 'Arteries endothelial', 'Myofibroblast cell', 'Thrombocytes', 'Cardiomyocytes2',
+    'Smooth muscle cell', 'Neuronal1', 'Neuronal2', 'Proliferating cell', 'Lymphatic endothelial',
+    'Neutrophils', 'Adipocytes', 'Capillaries endothelial', 'Pericytes', 'Neuroendocrine cell',
+    'Fibroblast', 'Macrophages', 'EndMT', 'T cell', 'Schwann cell',
+    'Glial cell'
+]
+
+cell_types= [
+    'Excitatory neuron', 'Inhibitory neuron', 'Endothelial', 'Astrocytes',
+    'Homeostatic microglia', 'Oligodendrocytes', 'Activated microglia', 'Meningeal cell',
+    'Ependymal cell', 'Purkinje cells', 'T cell', 'Pericytes',
+    'Proliferative cell', 'Glial cell', 'Endocrine cells', 'Neutrophils',
+    'Oligodendrocytes precursor cell'
+]
+
+
+cell_type_color = [('Alveolar type 2 cell', '#1E90FF'),  # dodgerblue
+                    ('Smooth muscle cell', '#FFFF00'),  # yellow
+                    ('Alveolar type 1 cell', '#63B8FF'),  # steelblue1
+                    ('Ciliated Cell', '#4682B4'),  # steelblue
+                    ('Alveolar macrophage', '#DA70D6'),  # orchid
+                    ('Serous cell', '#104E8B'),  # dodgerblue3
+                    ('Capillaries endothelial', '#9ACD32'),  # palegreen3
+                    ('Mesothelial Cell', '#EEC900'),  # yellow3
+                    ('Lymphatic endothelial', '#2E8B57'),  # seagreen
+                    ('Fibroblast', '#FFD700'),  # gold
+                    ('Tuft cell', '#1C86EE'),  # dodgerblue2
+                    ('B plasma', '#9370DB'),  # mediumpurple
+                    ('Mast', '#FF7F24'),  # chocolate1
+                    ('Basal cell', '#436EEE'),  # royalblue1
+                    ('Dendritic cell', '#EE7600'),  # orange2
+                    ('Goblet cell', '#1E90FF'),  # dodgerblue
+                    ('Monocyte', '#FF6347'),  # tomato
+                    ('CD8-T', '#FFC0CB'),  # pink
+                    ('CD4-T', '#DB7093'),  # palevioletred2
+                    ('Neutrophils', '#DAA520'),  # goldenrod
+                    ('B', '#6959CD')]  # slateblue3
+
+cell_type_color= [
+    ('Cardiomyocytes1', '#FF6A6A'),  # indianred1
+    ('Cardiomyocytes2', '#FFA07A'),  # lightsalmon
+    ('Capillaries endothelial', '#9ACD32'),  # palegreen3
+    ('Arteries endothelial', '#40E0D0'),  # turquoise
+    ('Lymphatic endothelial', '#2E8B57'),  # seagreen
+    ('EndMT', '#8FBC8F'),  # darkseagreen
+    ('Myofibroblast cell', '#CDAD00'),  # gold3
+    ('Pericytes', '#63B8FF'),  # steelblue1
+    ('Smooth muscle cell', '#FFFF00'),  # yellow
+    ('Fibroblast', '#FFD700'),  # gold
+    ('Macrophages', '#DA70D6'),  # orchid
+    ('T cell', '#DB7093'),  # palevioletred2
+    ('Neutrophils', '#DAA520'),  # goldenrod
+    ('Neuroendocrine cell', '#FFC0CB'),  # pink
+    ('Neuronal1', '#FF7F24'),  # chocolate1
+    ('Neuronal2', '#EE7621'),  # chocolate2
+    ('Schwann cell', '#DB7093'),  # palevioletred2
+    ('Glial cell', '#9370DB'),  # mediumpurple
+    ('Thrombocytes', '#9F79EE'),  # mediumpurple2
+    ('Adipocytes', '#6959CD'),  # slateblue3
+    ('Proliferating cell', '#9370DB')  # mediumpurple
+]
+
+cell_type_color= [
+    ('Inhibitory neuron', '#4682B4'),  # steelblue
+    ('Excitatory neuron', '#FFFF00'),  # yellow
+    ('Homeostatic microglia', '#1E90FF'),  # dodgerblue
+    ('Activated microglia', '#DB7093'),  # palevioletred2
+    ('Oligodendrocytes', '#FF7F00'),  # orange2
+    ('Oligodendrocytes precursor cell', '#FF7F24'),  # chocolate1
+    ('Purkinje cells', '#6A5ACD'),  # slateblue3
+    ('Glial cell', '#9370DB'),  # mediumpurple
+    ('Astrocytes', '#FF6347'),  # tomato
+    ('Endocrine cells', '#FFD700'),  # gold
+    ('Meningeal cell', '#98FB98'),  # palegreen3
+    ('Ependymal cell', '#8FBC8F'),  # darkseagreen
+    ('Proliferative cell', '#FF69B4'),  # hotpink2
+    ('T cell', '#FFC0CB'),  # pink
+    ('Neutrophils', '#DAA520'),  # goldenrod
+    ('Endothelial', '#98FB98'),  # palegreen3
+    ('Pericytes', '#63B8FF')  # steelblue1
+]
+
+
+
+
+fig, axes = plt.subplots(1, 21, figsize=(50, 4))
+for i, cell_type in enumerate(cell_types):
+    ax = axes[i]
+    ax.scatter(df.index, df[cell_type], c=cell_type_color[i][1], s=25)
+    ax.set_title(f'{cell_type_color[i][0]}', fontsize=14)
+    ax.set_xlabel('Hours post co-culture', fontsize=12)
+    if i==0: ax.set_ylabel('Proportion', fontsize=12)
+plt.suptitle('Cell type proportions', fontsize=15, y=1.05)
+
+
+w=pd.read_csv('brain_lr.csv')
+w.index = w.iloc[:,0]
+w=w.iloc[:,1:]
+ax = sns.heatmap(w, cmap="Reds", annot=True)
+timepoints = torch.tensor(df.index.values.reshape(-1, 1))
+proportions = torch.tensor(df[cell_types].values)
+W_prior_variance=w
+W_prior_variance=np.array(W_prior_variance)
+n_timepoints, n_cell_types = proportions.shape
+
+
+prior_matrix = torch.tensor(W_prior_variance)
+proportions_mean = proportions.mean(dim=0)
+proportions_std = proportions.std(dim=0)
+proportions = (proportions - proportions_mean) / (proportions_std)
+def unscale(proportions, proportions_mean, proportions_std, cluster_index): 
+        return np.clip(proportions * 
+                       proportions_std.detach().numpy()[cluster_index] + 
+                       proportions_mean.detach().numpy()[cluster_index], 
+                       0, None)
+                       
+hyperparams = {
+        names.LENGTHSCALE_F: 6.5,
+        names.LENGTHSCALE_W: 6.5,
+        names.SIGMA_F: 0.5,
+        names.VARIANCE_F: 1,
+        names.SIGMA_W: 0.1,
+        names.VARIANCE_W: 1,
+        names.SIGMA_Y: 0.5,
+    }
+
+model = DIISCO(lambda_matrix=prior_matrix, hypers_init_vals=hyperparams, verbose=True,verbose_freq=100)
+model.fit(timepoints, 
+          proportions, 
+          n_iter=300000, 
+          lr=0.00005,
+          hypers_to_optim=[],
+          guide="MultivariateNormalFactorized")
+
+
+start =0
+loss_moving_avg = np.convolve(model.losses[start:], np.ones(100)/100, 'valid')
+plt.figure(figsize=(8, 5))
+plt.plot(loss_moving_avg)
+plt.title('DIISCO model loss', fontsize=13)
+plt.ylabel('Loss', fontsize=12)
+plt.xlabel('Number of epochs', fontsize=12)
+
+
+predict_timepoints = torch.linspace(timepoints.min(), timepoints.max(), 100).reshape(-1, 1)
+means = model.get_means(predict_timepoints)
+
+samples = model.sample(predict_timepoints, 
+                     n_samples=10000, 
+                     n_samples_per_latent=10,
+                     include_emission_variance=False)      
+    
+W_samples_predict = samples['W']
+f_samples_predict = samples['F']
+y_samples_predict = samples['Y']        
+print(y_samples_predict.shape)
+print(W_samples_predict.shape)        
+ 
+
+fig, axes = plt.subplots(1, 21, figsize=(100,18))
+for i, cell_type in enumerate(cell_types):
+    cell_type_samples = y_samples_predict[:, :, i]
+    mean = unscale(cell_type_samples.mean(axis=0), proportions_mean, proportions_std, i)
+    x = predict_timepoints.squeeze().numpy()
+    #percentile_75 = unscale(np.percentile(cell_type_samples, 84, axis=0), 
+    #                        proportions_mean, proportions_std, i)
+    #percentile_25 = unscale(np.percentile(cell_type_samples, 16, axis=0), 
+    #                        proportions_mean, proportions_std, i)
+    ax = axes[i]
+    line = ax.plot(x, mean, c=cell_type_color[i][1])
+    #ax.fill_qbetween(x, percentile_25, percentile_75, color=cell_type_color[i][1], alpha=0.2)
+    ax.scatter(df.index, df[cell_type], c=cell_type_color[i][1], s=25)
+    ax.set_title(f'{cell_type_color[i][0]}', fontsize=14)
+    ax.set_xlabel('Hours post co-culture', fontsize=12)
+    if i==0: ax.set_ylabel('Proportion', fontsize=12)
+    ax.set_ylim([0, 0.75])
+plt.suptitle('DIISCO predicted cell type proportions', fontsize=15, y=1.05)
+plt.savefig('heart_cell_new.pdf', bbox_inches='tight')
+
+
+
+
+plt.figure(figsize=(5, 4))
+W_avg_over_time = W_samples_predict.mean(axis=(0, 1)).detach().numpy()
+ax = sns.heatmap(W_avg_over_time, cmap="RdBu_r", annot=True, 
+                 vmax=0.4, vmin=-0.4, center=0)
+ax.set_yticklabels(cell_types, fontsize=12)
+ax.set_xticklabels(cell_types, fontsize=12)
+plt.yticks(rotation=0)
+plt.xticks(rotation=45)
+plt.title('DIISCO predicted interactions mean ($\hat{W}_{avg})$', fontsize=14, y=1.05)
+plt.xlabel('Source cluster', fontsize=12)
+plt.ylabel('Target cluster', fontsize=12)
+
+
+
+fig.set_size_inches(30, 30)
+linestyles = ['-']
+W_mean = W_samples_predict.mean(axis=0)
+lines = 0  
+lines=0
+for i, cell_type_i in enumerate(cell_types):
+    for j, cell_type_j in enumerate(cell_types):
+        if i != j:
+            plt.plot(predict_timepoints.squeeze(), 
+                     W_mean[:, i, j].detach().numpy(),
+                     linestyle=linestyles[lines % len(linestyles)],
+                     label='$W_{%s,%s}$ (%s - %s interaction)' % (i, j, cell_type_i, cell_type_j))
+            lines += 1            
+plt.legend(bbox_to_anchor=(1, 1.02), loc='upper left', fontsize=5)
+plt.title('DIISCO predicted interactions over time', fontsize=15)
+plt.ylabel('$W_{i, j}$', fontsize=15)
+plt.xlabel('time', fontsize=14)
+plt.savefig('heart_all_new.pdf', bbox_inches='tight')
+
+
+
+annot = False
+vmin = -1
+vmax = 1
+
+X_200_days_pre_dli_index = np.where(predict_timepoints > 0)[0][0]
+X_post_dli_index = np.where(predict_timepoints > 34)[0][0]
+X_post_dli_index
+W = W_samples_predict.mean(axis=0)
+W_pre_dli = W[X_200_days_pre_dli_index:X_post_dli_index]
+W_pre_dli_avg_over_time = torch.mean(W_pre_dli, dim=0)
+
+mean_abs_W_threshold = 0.25
+max_abs_W_threshold = 0.99
+mu_sigma_threshold = 0.4
+
+colors = [
+    "#ea5c6f", "#f7905a", "#e187cb", "#fb948d", "#e2b159", "#ebed6f", "#b2db87", "#7ee7bb",
+    "#64cccf", "#a9dce6", "#a48cbe", "#e4b7d6", "#9bd9ff", "#ff999a", "#c79bf1", "#fbceab",
+    "#ff9ccd", "#D51F26", "#272E6A", "#208A42", "#89288F", "#F47D2B", "#FEE500", "#8A9FD1",
+    "#C06CAB", "#D8A767", "#90D5E4", "#89C75F", "#F37B7D", "#9983BD", "#D24B27", "#3BBCA8",
+    "#6E4B9E", "#0C727C", "#7E1416", "#ebd57c", "#e18748", "#ed4437", "#fe9e37", "#b24646",
+    "#96873b", "#b49d99", "#b37557", "#fc9a9a", "#a4cde1", "#67a4cc", "#277fb8", "#549da3",
+    "#96cb8f", "#8bc96d", "#4dae47", "#5c9e43", "#b79973", "#f38989", "#ec5051", "#e32427",
+    "#ef6a45", "#f9b769", "#f9a341", "#f48521", "#ee8e46", "#d4a6a8", "#af93c4", "#8660a8",
+    "#815e99", "#c6b598", "#f6f28f", "#d4a55b", "#b05a28"
+]
+
+fig.set_size_inches(30, 30)
+lines=0
+for i, cell_type_i in enumerate(cell_types):
+    for j, cell_type_j in enumerate(cell_types):
+        # a sustained strong interaction over the entire post-DLI time period
+        sustained = np.abs(W_pre_dli_avg_over_time[i, j]) > mean_abs_W_threshold
+        # a transient strong interaction during the post-DLI time period
+        transient = (np.abs(W_pre_dli[:, i, j]) > max_abs_W_threshold).any()
+        show_line = (sustained or transient)
+        if show_line and i!= j:
+            plt.plot(predict_timepoints.squeeze(),
+                     W[:, i, j],
+                     linestyle=linestyles[lines % len(linestyles)],
+                     label='$W_{%s,%s}$ (%s - %s interaction)' % (i, j, cell_type_i, cell_type_j))
+plt.legend(bbox_to_anchor=(1, 1.02), loc='upper left', fontsize=5)
+plt.title('DIISCO predicted interactions over time', fontsize=15)
+plt.ylabel('$W_{i, j}$', fontsize=15)
+plt.xlabel('time', fontsize=14)
+plt.savefig('up.pdf', bbox_inches='tight')     
+
+
+fig.set_size_inches(30, 30)
+linestyles = ['-']
+lines = 0
+
+for i, cell_type_i in enumerate(cell_types):
+    for j, cell_type_j in enumerate(cell_types):
+        # a sustained strong interaction over the entire post-DLI time period
+        sustained = np.abs(W_pre_dli_avg_over_time[i, j]) > mean_abs_W_threshold
+        # a transient strong interaction during the post-DLI time period
+        transient = (np.abs(W_pre_dli[:, i, j]) >max_abs_W_threshold).any()
+        show_line = (sustained or transient)
+        if show_line and i != j:
+            color = colors[lines]
+            plt.plot(predict_timepoints.squeeze(),
+                     W[:, i, j],
+                     linestyle=linestyles[lines % len(linestyles)],
+                     color=color,
+                     label='$W_{%s,%s}$ (%s - %s interaction)' % (i, j, cell_type_i, cell_type_j))
+            lines += 1
+
+once = False
+color = 'tab:gray'
+alpha = 0.2  
+for i, cluster_i in enumerate(cell_types):
+    for j, cluster_j in enumerate(cell_types):
+        sustained = np.abs(W_pre_dli_avg_over_time[i, j]) > mean_abs_W_threshold
+        transient = (np.abs(W_pre_dli[:, i, j]) > max_abs_W_threshold).any()
+        show_line = (sustained or transient)
+        if not show_line and i != j:
+            plt.plot(predict_timepoints.squeeze(), W[:, i, j],
+                     color=color, alpha=alpha,
+                     linewidth=0.5, zorder=100,
+                     label='All other interactions' if not once else '')
+            once = True
+
+plt.legend(bbox_to_anchor=(1, 1.02), loc='upper left', fontsize=14)
+plt.title('Strongest cluster interactions over time', fontsize=14)
+plt.ylabel('$W_{i, j}$', fontsize=14)
+plt.xlabel('Timepoint', fontsize=14)
+plt.savefig('heart_strong_interation_new.pdf', bbox_inches='tight')  
+

@@ -1,0 +1,103 @@
+##palantir
+
+library(Seurat)
+library(Matrix)
+seurat_to_adata <- function(object,#seurat对象
+                            Dimension=c('UMAP','TSNE'),#降维方式
+                            path){#文件保存路径
+  seurat_obj <- object
+  seurat_obj$barcode <- colnames(seurat_obj)
+  if(Dimension=='UMAP'){
+    cell.embeddings<- seurat_obj@reductions$umap@cell.embeddings
+    seurat_obj$UMAP_1 <- cell.embeddings[,1]
+    seurat_obj$UMAP_2 <- cell.embeddings[,2]
+  }else{
+
+    cell.embeddings<- seurat_obj@reductions$tsne@cell.embeddings
+    seurat_obj$TSNE_1 <- cell.embeddings[,1]
+    seurat_obj$TSNE_2 <- cell.embeddings[,2]
+  }
+  #保存metadat
+  write.csv(seurat_obj@meta.data, file=paste0(path,'metadata.csv'), quote=F, row.names=F)
+  #保存matrix
+  counts_matrix <- GetAssayData(seurat_obj, assay='RNA', slot='counts')
+  writeMM(counts_matrix, file=paste0(path, 'counts.mtx'))
+  #PCA降维信息
+  write.csv(seurat_obj@reductions$pca@cell.embeddings, file=paste0(path,'pca.csv'), quote=F,row.names=F)
+
+  #保存gene name
+  write.table(data.frame('gene'=rownames(counts_matrix)),file=paste0(path,'gene_names.csv'),
+              quote=F,row.names=F,col.names=F)
+}
+
+#运行
+seurat_to_adata(endmt,Dimension='UMAP',path = './')
+###python
+import palantir
+import scanpy as sc
+import pandas as pd
+import os
+
+# Plotting
+import matplotlib
+import matplotlib.pyplot as plt
+
+# warnings
+import warnings
+from numba.core.errors import NumbaDeprecationWarning
+
+warnings.filterwarnings(action="ignore", category=NumbaDeprecationWarning)
+warnings.filterwarnings(
+  action="ignore", module="scanpy", message="No data for colormapping"
+)
+import scanpy as sc
+import anndata
+from scipy import io
+from scipy.sparse import coo_matrix, csr_matrix
+import numpy as np
+import os
+import pandas as pd
+sc.settings.verbosity = 0
+sc.logging.print_versions()
+sc.settings.set_figure_params(dpi=80, facecolor='white')
+def seurat_to_adata(counts,#R中导出的counts.mtx文件
+                    meta,#R中导出的metadata.csv文件
+                    gene_name,#R中导出的gene_names.csv文件
+                    pca,#R中导出的pca.csv文件
+                    obsm,
+                    reduction1,#TSNE数据为TSNE_1，UMAP数据为UMAP_1
+                    reduction2):#TSNE数据为TSNE_2，UMAP数据为UMAP_2
+  # 加载表达矩阵
+  X = io.mmread(counts)
+# 创建anndata
+adata = anndata.AnnData(X=X.transpose().tocsr())
+cell_meta = pd.read_csv(meta)#metadata
+with open(gene_name, 'r') as f:gene_names = f.read().splitlines()
+adata.obs = cell_meta
+adata.obs.index = adata.obs['barcode']
+adata.var.index = gene_names
+pca = pd.read_csv(pca)
+pca.index = adata.obs.index
+adata.obsm['X_pca'] = pca.to_numpy()
+adata.obsm[obsm] = np.vstack((adata.obs[reduction1].to_numpy(), adata.obs[reduction2].to_numpy())).T
+return adata
+os.chdir('./')
+ad=seurat_to_adata(counts='./counts.mtx',
+                   meta='./metadata.csv',
+                   gene_name='./gene_names.csv',
+                   pca='./pca.csv',
+                   obsm='X_umap',
+                   reduction1='UMAP_1',reduction2='UMAP_2')
+dm_res = palantir.utils.run_diffusion_maps(ad, n_components=5)
+ms_data = palantir.utils.determine_multiscale_space(ad)
+imputed_X = palantir.utils.run_magic_imputation(ad)
+terminal_states = pd.Series(
+  ["EndMT"],
+  index=["GCACGGTCAACTGTGT-1_6_15"],
+)
+start_cell = "GAATAGAAGAGGCGTT-1_1_15"
+pr_res = palantir.core.run_palantir(
+  ad, start_cell, num_waypoints=500, terminal_states=terminal_states
+)
+palantir.plot.plot_palantir_results(ad, s=3)
+plt.savefig("A1.pdf")
