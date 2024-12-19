@@ -1,0 +1,1853 @@
+DefaultAssay(lung)<-'RNA'
+df<-as.data.frame(table(lung@active.ident))
+df<-as.character(df$Var1)
+a <- list()
+wk1_p <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    a[[i]] <- FindMarkers(lung, ident.1 = "1wk", ident.2 = "plain", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    a[[i]]$class <- df[[i]]
+    a[[i]]$gene <-rownames(a[[i]])
+    wk1_p <- rbind(wk1_p, a[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+b <- list()
+wk2_p <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    b[[i]] <- FindMarkers(lung, ident.1 = "2wk", ident.2 = "plain", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    b[[i]]$class <- df[[i]]
+    b[[i]]$gene <-rownames(b[[i]])
+    wk2_p <- rbind(wk2_p, b[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+c <- list()
+wk3_p <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    c[[i]] <- FindMarkers(lung, ident.1 = "3wk", ident.2 = "plain", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    c[[i]]$class <- df[[i]]
+    c[[i]]$gene <-rownames(c[[i]])
+    wk3_p <- rbind(wk3_p, c[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+d <- list()
+mon8_p <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    d[[i]] <- FindMarkers(lung, ident.1 = "8 mon", ident.2 = "plain", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    d[[i]]$class <- df[[i]]
+    d[[i]]$gene <-rownames(d[[i]])
+    mon8_p <- rbind(mon8_p, d[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+e <- list()
+ts_wk1 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    e[[i]] <- FindMarkers(lung, ident.1 = "Tibetan", ident.2 = "1wk", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    e[[i]]$class <- df[[i]]
+    e[[i]]$gene <-rownames(e[[i]])
+    ts_wk1 <- rbind(ts_wk1, e[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+f <- list()
+ts_wk2 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    f[[i]] <- FindMarkers(lung, ident.1 = "Tibetan", ident.2 = "2wk", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    f[[i]]$class <- df[[i]]
+    f[[i]]$gene <-rownames(f[[i]])
+    ts_wk2 <- rbind(ts_wk2, f[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+g<- list()
+ts_wk3 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    g[[i]] <- FindMarkers(lung, ident.1 = "Tibetan", ident.2 = "3wk", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    g[[i]]$class <- df[[i]]
+    g[[i]]$gene <-rownames(g[[i]])
+    ts_wk3 <- rbind(ts_wk3, g[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+h<- list()
+ts_mon8 <- data.frame()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    h[[i]] <- FindMarkers(lung, ident.1 = "Tibetan", ident.2 = "8 mon", group.by = "time",
+                          subset.ident = df[[i]], min.pct = 0.25,
+                          logfc.threshold = 0.25)
+    h[[i]]$class <- df[[i]]
+    h[[i]]$gene <-rownames(h[[i]])
+    ts_mon8 <- rbind(ts_mon8, h[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+wk1_p<-subset(wk1_p,wk1_p$p_val_adj<0.05)
+wk2_p<-subset(wk2_p,wk2_p$p_val_adj<0.05)
+wk3_p<-subset(wk3_p,wk3_p$p_val_adj<0.05)
+mon8_p<-subset(mon8_p,mon8_p$p_val_adj<0.05)
+ts_wk1<-subset(ts_wk1,ts_wk1$p_val_adj<0.05)
+ts_wk2<-subset(ts_wk2,ts_wk2$p_val_adj<0.05)
+ts_wk3<-subset(ts_wk3,ts_wk3$p_val_adj<0.05)
+ts_mon8<-subset(ts_mon8,ts_mon8$p_val_adj<0.05)
+
+wk1_p$time<-'wk1_p'
+wk2_p$time<-'wk2_p'
+wk3_p$time<-'wk3_p'
+mon8_p$time<-'mon8_p'
+ts_wk1$time<-'ts_wk1'
+ts_wk2$time<-'ts_wk2'
+ts_wk3$time<-'ts_wk3'
+ts_mon8$time<-'ts_mon8'
+
+############################################################################################
+###magnitude of plasticity(DEG/gene)
+cell<-list()
+data<-list()
+for (i in 1:length(df)) {
+  cell[[i]]<-subset(lung,idents = df[[i]])
+  data[[i]]<-AverageExpression(cell[[i]],assays = 'RNA')
+  data[[i]]<-data[[i]][["RNA"]]
+  data[[i]]<-as.matrix(data[[i]])
+  data[[i]]<-as.data.frame(data[[i]])
+  data[[i]]<-na.omit(data[[i]])
+  data[[i]]<-subset(data[[i]],data[[i]]$V1>0)
+}
+
+a_up<-list()
+b_up<-list()
+c_up<-list()
+d_up<-list()
+e_up<-list()
+f_up<-list()
+g_up<-list()
+h_up<-list()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    a_up[[i]]<-subset(wk1_p,wk1_p$class%in%df[[i]])
+    b_up[[i]]<-subset(wk2_p,wk2_p$class%in%df[[i]])
+    c_up[[i]]<-subset(wk3_p,wk3_p$class%in%df[[i]])
+    d_up[[i]]<-subset(mon8_p,mon8_p$class%in%df[[i]])
+    e_up[[i]]<-subset(ts_wk1,ts_wk1$class%in%df[[i]])
+    f_up[[i]]<-subset(ts_wk2,ts_wk2$class%in%df[[i]])
+    g_up[[i]]<-subset(ts_wk3,ts_wk3$class%in%df[[i]])
+    h_up[[i]]<-subset(ts_mon8,ts_mon8$class%in%df[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+wk1_p_ratio<-list()
+wk2_p_ratio<-list()
+wk3_p_ratio<-list()
+mon8_p_ratio<-list()
+ts_wk1_ratio<-list()
+ts_wk2_ratio<-list()
+ts_wk3_ratio<-list()
+ts_mon8_ratio<-list()
+gene_ratio<-data.frame()
+for (i in 1:21) {
+  wk1_p_ratio[[i]]<-length(rownames(a_up[[i]]))%>%as.data.frame()
+  wk2_p_ratio[[i]]<-length(rownames(b_up[[i]]))%>%as.data.frame()
+  wk3_p_ratio[[i]]<-length(rownames(c_up[[i]]))%>%as.data.frame()
+  mon8_p_ratio[[i]]<-length(rownames(d_up[[i]]))%>%as.data.frame()
+  ts_wk1_ratio[[i]]<-length(rownames(e_up[[i]]))%>%as.data.frame()
+  ts_wk2_ratio[[i]]<-length(rownames(f_up[[i]]))%>%as.data.frame()
+  ts_wk3_ratio[[i]]<-length(rownames(g_up[[i]]))%>%as.data.frame()
+  ts_mon8_ratio[[i]]<-length(rownames(h_up[[i]]))%>%as.data.frame()
+  wk1_p_ratio[[i]]$group<-df[[i]]
+  wk2_p_ratio[[i]]$group<-df[[i]]
+  wk3_p_ratio[[i]]$group<-df[[i]]
+  mon8_p_ratio[[i]]$group<-df[[i]]
+  ts_wk1_ratio[[i]]$group<-df[[i]]
+  ts_wk2_ratio[[i]]$group<-df[[i]]
+  ts_wk3_ratio[[i]]$group<-df[[i]]
+  ts_mon8_ratio[[i]]$group<-df[[i]]
+  wk1_p_ratio[[i]]$time<-'wk1_p'
+  wk2_p_ratio[[i]]$time<-'wk2_p'
+  wk3_p_ratio[[i]]$time<-'wk3_p'
+  mon8_p_ratio[[i]]$time<-'mon8_p'
+  ts_wk1_ratio[[i]]$time<-'ts_wk1'
+  ts_wk2_ratio[[i]]$time<-'ts_wk2'
+  ts_wk3_ratio[[i]]$time<-'ts_wk3'
+  ts_mon8_ratio[[i]]$time<-'ts_mon8'
+  gene_ratio<-rbind(gene_ratio,wk1_p_ratio[[i]],wk2_p_ratio[[i]],wk3_p_ratio[[i]],mon8_p_ratio[[i]],ts_wk1_ratio[[i]],ts_wk2_ratio[[i]],ts_wk3_ratio[[i]],ts_mon8_ratio[[i]])
+}
+colnames(gene_ratio)<-c('ratio','group','time')
+
+cell<-list()
+p<-list()
+for (i in 1:length(df)) {
+  cell[[i]]<-subset(gene_ratio,gene_ratio$group%in%df[[i]])
+  cell[[i]]$class <- c('wk1','wk2','wk3','mon8','wk1','wk2','wk3','mon8')
+  cell[[i]]$class<-factor(cell[[i]]$class,levels = c('wk1','wk2','wk3','mon8'))
+  cell[[i]]$time<-factor(cell[[i]]$time,levels = c('wk1_p','ts_wk1','wk2_p','ts_wk2','wk3_p','ts_wk3','mon8_p','ts_mon8'))
+  p[[i]]<-ggplot(cell[[i]],aes(x = class, y = ratio, fill = time)) +
+    geom_bar(stat = "identity",position = position_dodge(), width=0.5, liupidth = 0.25)+
+    labs(x = 'Time', y = 'Ratio', title = unique(cell[[i]]$group)) +ylim(0, 2000)+
+    scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+wk_p_num<-subset(gene_ratio,gene_ratio$time%in%c('wk1_p','wk2_p','wk3_p','mon8_p'))
+lung_cell <- read_csv("E:/high adaption/analysis/cell_annation/result/lung_cell.csv")
+colnames(wk_p_num)<-c('num','Var1','time')
+wk_p_num<-left_join(wk_p_num,lung_cell)
+
+avg_ratio <- wk_p_num %>%
+  group_by(Var1) %>%
+  summarise(avg_ratio = mean(num)) %>%
+  arrange(desc(avg_ratio))
+
+avg_ratio<-left_join(avg_ratio,lung_cell)
+avg_ratio$col<-factor(avg_ratio$col,levels =unique(avg_ratio$col))
+avg_ratio$Var1<-factor(avg_ratio$Var1,levels =unique(avg_ratio$Var1))
+colnames(avg_ratio)<-c('Var1','num','majior','col')
+coll<-as.character(avg_ratio$col)
+ggplot(avg_ratio,aes(Var1,num,fill=Var1))+geom_bar(stat="identity")+theme_classic()+scale_fill_manual(values=coll)+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+  )
+
+
+
+
+wk1_p_ratio<-list()
+wk2_p_ratio<-list()
+wk3_p_ratio<-list()
+mon8_p_ratio<-list()
+ts_wk1_ratio<-list()
+ts_wk2_ratio<-list()
+ts_wk3_ratio<-list()
+ts_mon8_ratio<-list()
+gene_ratio<-data.frame()
+for (i in 1:21) {
+  wk1_p_ratio[[i]]<-length(rownames(a_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  wk2_p_ratio[[i]]<-length(rownames(b_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  wk3_p_ratio[[i]]<-length(rownames(c_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  mon8_p_ratio[[i]]<-length(rownames(d_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  ts_wk1_ratio[[i]]<-length(rownames(e_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  ts_wk2_ratio[[i]]<-length(rownames(f_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  ts_wk3_ratio[[i]]<-length(rownames(g_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  ts_mon8_ratio[[i]]<-length(rownames(h_up[[i]]))/length(data[[i]]$V1)%>%as.data.frame()
+  wk1_p_ratio[[i]]$group<-df[[i]]
+  wk2_p_ratio[[i]]$group<-df[[i]]
+  wk3_p_ratio[[i]]$group<-df[[i]]
+  mon8_p_ratio[[i]]$group<-df[[i]]
+  ts_wk1_ratio[[i]]$group<-df[[i]]
+  ts_wk2_ratio[[i]]$group<-df[[i]]
+  ts_wk3_ratio[[i]]$group<-df[[i]]
+  ts_mon8_ratio[[i]]$group<-df[[i]]
+  wk1_p_ratio[[i]]$time<-'wk1_p'
+  wk2_p_ratio[[i]]$time<-'wk2_p'
+  wk3_p_ratio[[i]]$time<-'wk3_p'
+  mon8_p_ratio[[i]]$time<-'mon8_p'
+  ts_wk1_ratio[[i]]$time<-'ts_wk1'
+  ts_wk2_ratio[[i]]$time<-'ts_wk2'
+  ts_wk3_ratio[[i]]$time<-'ts_wk3'
+  ts_mon8_ratio[[i]]$time<-'ts_mon8'
+  gene_ratio<-rbind(gene_ratio,wk1_p_ratio[[i]],wk2_p_ratio[[i]],wk3_p_ratio[[i]],mon8_p_ratio[[i]],ts_wk1_ratio[[i]],ts_wk2_ratio[[i]],ts_wk3_ratio[[i]],ts_mon8_ratio[[i]])
+}
+colnames(gene_ratio)<-c('ratio','group','time')
+
+cell<-list()
+p<-list()
+for (i in 1:length(df)) {
+  cell[[i]]<-subset(gene_ratio,gene_ratio$group%in%df[[i]])
+  cell[[i]]$class <- c('wk1','wk2','wk3','mon8','wk1','wk2','wk3','mon8')
+  cell[[i]]$class<-factor(cell[[i]]$class,levels = c('wk1','wk2','wk3','mon8'))
+  cell[[i]]$time<-factor(cell[[i]]$time,levels = c('wk1_p','ts_wk1','wk2_p','ts_wk2','wk3_p','ts_wk3','mon8_p','ts_mon8'))
+  p[[i]]<-ggplot(cell[[i]],aes(x = class, y = ratio, fill = time)) +
+    geom_bar(stat = "identity",position = position_dodge(), width=0.5, liupidth = 0.25)+
+    labs(x = 'Time', y = 'Ratio', title = unique(cell[[i]]$group)) +ylim(0, 0.1)+
+    scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+
+##################################################################################
+####plastic change
+wk1_p_up<-subset(wk1_p,wk1_p$avg_log2FC>0)
+wk1_p_down<-subset(wk1_p,wk1_p$avg_log2FC<0)
+wk2_p_up<-subset(wk2_p,wk2_p$avg_log2FC>0)
+wk2_p_down<-subset(wk2_p,wk2_p$avg_log2FC<0)
+wk3_p_up<-subset(wk3_p,wk3_p$avg_log2FC>0)
+wk3_p_down<-subset(wk3_p,wk3_p$avg_log2FC<0)
+mon8_p_up<-subset(mon8_p,mon8_p$avg_log2FC>0)
+mon8_p_down<-subset(mon8_p,mon8_p$avg_log2FC<0)
+ts_wk1_up<-subset(ts_wk1,ts_wk1$avg_log2FC>0)
+ts_wk1_down<-subset(ts_wk1,ts_wk1$avg_log2FC<0)
+ts_wk2_up<-subset(ts_wk2,ts_wk2$avg_log2FC>0)
+ts_wk2_down<-subset(ts_wk2,ts_wk2$avg_log2FC<0)
+ts_wk3_up<-subset(ts_wk3,ts_wk3$avg_log2FC>0)
+ts_wk3_down<-subset(ts_wk3,ts_wk3$avg_log2FC<0)
+ts_mon8_up<-subset(ts_mon8,ts_mon8$avg_log2FC>0)
+ts_mon8_down<-subset(ts_mon8,ts_mon8$avg_log2FC<0)
+
+a_up<-list()
+b_up<-list()
+c_up<-list()
+d_up<-list()
+e_up<-list()
+f_up<-list()
+g_up<-list()
+h_up<-list()
+a_down<-list()
+b_down<-list()
+c_down<-list()
+d_down<-list()
+e_down<-list()
+f_down<-list()
+g_down<-list()
+h_down<-list()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    a_up[[i]]<-subset(wk1_p_up,wk1_p_up$class%in%df[[i]])
+    b_up[[i]]<-subset(wk2_p_up,wk2_p_up$class%in%df[[i]])
+    c_up[[i]]<-subset(wk3_p_up,wk3_p_up$class%in%df[[i]])
+    d_up[[i]]<-subset(mon8_p_up,mon8_p_up$class%in%df[[i]])
+    e_up[[i]]<-subset(ts_wk1_up,ts_wk1_up$class%in%df[[i]])
+    f_up[[i]]<-subset(ts_wk2_up,ts_wk2_up$class%in%df[[i]])
+    g_up[[i]]<-subset(ts_wk3_up,ts_wk3_up$class%in%df[[i]])
+    h_up[[i]]<-subset(ts_mon8_up,ts_mon8_up$class%in%df[[i]])
+    a_down[[i]]<-subset(wk1_p_down,wk1_p_down$class%in%df[[i]])
+    b_down[[i]]<-subset(wk2_p_down,wk2_p_down$class%in%df[[i]])
+    c_down[[i]]<-subset(wk3_p_down,wk3_p_down$class%in%df[[i]])
+    d_down[[i]]<-subset(mon8_p_down,mon8_p_down$class%in%df[[i]])
+    e_down[[i]]<-subset(ts_wk1_down,ts_wk1_down$class%in%df[[i]])
+    f_down[[i]]<-subset(ts_wk2_down,ts_wk2_down$class%in%df[[i]])
+    g_down[[i]]<-subset(ts_wk3_down,ts_wk3_down$class%in%df[[i]])
+    h_down[[i]]<-subset(ts_mon8_down,ts_mon8_down$class%in%df[[i]])
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+####reinforcing
+int_wk1_up<-list()
+int_wk2_up<-list()
+int_wk3_up<-list()
+int_mon8_up<-list()
+int_wk1_down<-list()
+int_wk2_down<-list()
+int_wk3_down<-list()
+int_mon8_down<-list()
+for (i in 1:length(df)) {
+  int_wk1_up[[i]]<-intersect(a_up[[i]]$gene,e_up[[i]]$gene)
+  int_wk2_up[[i]]<-intersect(b_up[[i]]$gene,f_up[[i]]$gene)
+  int_wk3_up[[i]]<-intersect(c_up[[i]]$gene,g_up[[i]]$gene)
+  int_mon8_up[[i]]<-intersect(d_up[[i]]$gene,h_up[[i]]$gene)
+  int_wk1_down[[i]]<-intersect(a_down[[i]]$gene,e_down[[i]]$gene)
+  int_wk2_down[[i]]<-intersect(b_down[[i]]$gene,f_down[[i]]$gene)
+  int_wk3_down[[i]]<-intersect(c_down[[i]]$gene,g_down[[i]]$gene)
+  int_mon8_down[[i]]<-intersect(d_down[[i]]$gene,h_down[[i]]$gene)
+}
+
+####reversing
+int_wk1_up_down<-list()
+int_wk2_up_down<-list()
+int_wk3_up_down<-list()
+int_mon8_up_down<-list()
+int_wk1_down_up<-list()
+int_wk2_down_up<-list()
+int_wk3_down_up<-list()
+int_mon8_down_up<-list()
+for (i in 1:length(df)) {
+  int_wk1_up_down[[i]]<-intersect(a_up[[i]]$gene,e_down[[i]]$gene)
+  int_wk2_up_down[[i]]<-intersect(b_up[[i]]$gene,f_down[[i]]$gene)
+  int_wk3_up_down[[i]]<-intersect(c_up[[i]]$gene,g_down[[i]]$gene)
+  int_mon8_up_down[[i]]<-intersect(d_up[[i]]$gene,h_down[[i]]$gene)
+  int_wk1_down_up[[i]]<-intersect(a_down[[i]]$gene,e_up[[i]]$gene)
+  int_wk2_down_up[[i]]<-intersect(b_down[[i]]$gene,f_up[[i]]$gene)
+  int_wk3_down_up[[i]]<-intersect(c_down[[i]]$gene,g_up[[i]]$gene)
+  int_mon8_down_up[[i]]<-intersect(d_down[[i]]$gene,h_up[[i]]$gene)
+}
+
+##################################################################################GO KEGG
+##########reinforcing gene
+reinforcing_wk1<-list()
+reinforcing_wk2<-list()
+reinforcing_wk3<-list()
+reinforcing_mon8<-list()
+
+for (i in 1:length(df)) {
+  int_wk1_up[[i]]<-as.data.frame(int_wk1_up[[i]])
+  int_wk1_down[[i]]<-as.data.frame(int_wk1_down[[i]])
+  int_wk2_up[[i]]<-as.data.frame(int_wk2_up[[i]])
+  int_wk2_down[[i]]<-as.data.frame(int_wk2_down[[i]])
+  int_wk3_up[[i]]<-as.data.frame(int_wk3_up[[i]])
+  int_wk3_down[[i]]<-as.data.frame(int_wk3_down[[i]])
+  int_mon8_up[[i]]<-as.data.frame(int_mon8_up[[i]])
+  int_mon8_down[[i]]<-as.data.frame(int_mon8_down[[i]])
+  colnames(int_wk1_up[[i]])<-'gene'
+  colnames(int_wk1_down[[i]])<-'gene'
+  colnames(int_wk2_up[[i]])<-'gene'
+  colnames(int_wk2_down[[i]])<-'gene'
+  colnames(int_wk3_up[[i]])<-'gene'
+  colnames(int_wk3_down[[i]])<-'gene'
+  colnames(int_mon8_up[[i]])<-'gene'
+  colnames(int_mon8_down[[i]])<-'gene'
+  reinforcing_wk1[[i]]<-rbind(int_wk1_up[[i]],int_wk1_down[[i]])
+  reinforcing_wk2[[i]]<-rbind(int_wk2_up[[i]],int_wk2_down[[i]])
+  reinforcing_wk3[[i]]<-rbind(int_wk3_up[[i]],int_wk3_down[[i]])
+  reinforcing_mon8[[i]]<-rbind(int_mon8_up[[i]],int_mon8_down[[i]])
+
+}
+
+all_lists <- list(reinforcing_wk1, reinforcing_wk2, reinforcing_wk3, reinforcing_mon8)
+reinforcing_gene <- vector("list", length = 21)
+for (i in 1:21) {
+  data_frames_at_i <- lapply(all_lists, `[[`, i)  # 提取每个list第i个数据框
+  reinforcing_gene[[i]] <- reduce(data_frames_at_i, function(x, y) inner_join(x, y, by = "gene"))
+}
+
+##########reversing gene
+reversing_wk1<-list()
+reversing_wk2<-list()
+reversing_wk3<-list()
+reversing_mon8<-list()
+
+for (i in 1:length(df)) {
+  int_wk1_up_down[[i]]<-as.data.frame(int_wk1_up_down[[i]])
+  int_wk1_down_up[[i]]<-as.data.frame(int_wk1_down_up[[i]])
+  int_wk2_up_down[[i]]<-as.data.frame(int_wk2_up_down[[i]])
+  int_wk2_down_up[[i]]<-as.data.frame(int_wk2_down_up[[i]])
+  int_wk3_up_down[[i]]<-as.data.frame(int_wk3_up_down[[i]])
+  int_wk3_down_up[[i]]<-as.data.frame(int_wk3_down_up[[i]])
+  int_mon8_up_down[[i]]<-as.data.frame(int_mon8_up_down[[i]])
+  int_mon8_down_up[[i]]<-as.data.frame(int_mon8_down_up[[i]])
+  colnames(int_wk1_up_down[[i]])<-'gene'
+  colnames(int_wk1_down_up[[i]])<-'gene'
+  colnames(int_wk2_up_down[[i]])<-'gene'
+  colnames(int_wk2_down_up[[i]])<-'gene'
+  colnames(int_wk3_up_down[[i]])<-'gene'
+  colnames(int_wk3_down_up[[i]])<-'gene'
+  colnames(int_mon8_up_down[[i]])<-'gene'
+  colnames(int_mon8_down_up[[i]])<-'gene'
+  reversing_wk1[[i]]<-rbind(int_wk1_up_down[[i]],int_wk1_down_up[[i]])
+  reversing_wk2[[i]]<-rbind(int_wk2_up_down[[i]],int_wk2_down_up[[i]])
+  reversing_wk3[[i]]<-rbind(int_wk3_up_down[[i]],int_wk3_down_up[[i]])
+  reversing_mon8[[i]]<-rbind(int_mon8_up_down[[i]],int_mon8_down_up[[i]])
+}
+
+all_lists <- list(reversing_wk1, reversing_wk2, reversing_wk3, reversing_mon8)
+reversing_gene <- vector("list", length = 21)
+for (i in 1:21) {
+  data_frames_at_i <- lapply(all_lists, `[[`, i)  # 提取每个list第i个数据框
+  reversing_gene[[i]] <- reduce(data_frames_at_i, function(x, y) inner_join(x, y, by = "gene"))
+}
+
+###number of gene
+sum<-list()
+sum_reversing_wk1<-list()
+sum_reversing_wk2<-list()
+sum_reversing_wk3<-list()
+sum_reversing_mon8<-list()
+sum_reinforcing_wk1<-list()
+sum_reinforcing_wk2<-list()
+sum_reinforcing_wk3<-list()
+sum_reinforcing_mon8<-list()
+sum<-list()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    sum_reversing_wk1[[i]]<-length(reversing_wk1[[i]]$gene)%>%data.frame()
+    sum_reversing_wk2[[i]]<-length(reversing_wk2[[i]]$gene)%>%data.frame()
+    sum_reversing_wk3[[i]]<-length(reversing_wk3[[i]]$gene)%>%data.frame()
+    sum_reversing_mon8[[i]]<-length(reversing_mon8[[i]]$gene)%>%data.frame()
+    sum_reinforcing_wk1[[i]]<-length(reinforcing_wk1[[i]]$gene)%>%data.frame()
+    sum_reinforcing_wk2[[i]]<-length(reinforcing_wk2[[i]]$gene)%>%data.frame()
+    sum_reinforcing_wk3[[i]]<-length(reinforcing_wk3[[i]]$gene)%>%data.frame()
+    sum_reinforcing_mon8[[i]]<-length(reinforcing_mon8[[i]]$gene)%>%data.frame()
+    sum_reversing_wk1[[i]]$time<-'wk1'
+    sum_reversing_wk2[[i]]$time<-'wk2'
+    sum_reversing_wk3[[i]]$time<-'wk3'
+    sum_reversing_mon8[[i]]$time<-'mon8'
+    sum_reinforcing_wk1[[i]]$time<-'wk1'
+    sum_reinforcing_wk2[[i]]$time<-'wk2'
+    sum_reinforcing_wk3[[i]]$time<-'wk3'
+    sum_reinforcing_mon8[[i]]$time<-'mon8'
+    sum_reversing_wk1[[i]]$cell<-df[[i]]
+    sum_reversing_wk2[[i]]$cell<-df[[i]]
+    sum_reversing_wk3[[i]]$cell<-df[[i]]
+    sum_reversing_mon8[[i]]$cell<-df[[i]]
+    sum_reinforcing_wk1[[i]]$cell<-df[[i]]
+    sum_reinforcing_wk2[[i]]$cell<-df[[i]]
+    sum_reinforcing_wk3[[i]]$cell<-df[[i]]
+    sum_reinforcing_mon8[[i]]$cell<-df[[i]]
+    sum_reversing_wk1[[i]]$class<-'wk1_reversing'
+    sum_reversing_wk2[[i]]$class<-'wk2_reversing'
+    sum_reversing_wk3[[i]]$class<-'wk3_reversing'
+    sum_reversing_mon8[[i]]$class<-'mon8_reversing'
+    sum_reinforcing_wk1[[i]]$class<-'wk1_reinforcing'
+    sum_reinforcing_wk2[[i]]$class<-'wk2_reinforcing'
+    sum_reinforcing_wk3[[i]]$class<-'wk3_reinforcing'
+    sum_reinforcing_mon8[[i]]$class<-'mon8_reinforcing'
+    sum[[i]]<-rbind(sum_reversing_wk1[[i]],sum_reversing_wk2[[i]],sum_reversing_wk3[[i]],sum_reversing_mon8[[i]],sum_reinforcing_wk1[[i]],sum_reinforcing_wk2[[i]],sum_reinforcing_wk3[[i]],sum_reinforcing_mon8[[i]])
+    colnames(sum[[i]])<-c('num','time','cell','class')
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+p<-list()
+for (i in 1:length(df)) {
+  sum[[i]]$time<-factor(sum[[i]]$time,levels = c('wk1','wk2','wk3','mon8'))
+  sum[[i]]$class<-factor(sum[[i]]$class,levels = c('wk1_reinforcing','wk1_reversing','wk2_reinforcing','wk2_reversing','wk3_reinforcing','wk3_reversing','mon8_reinforcing','mon8_reversing'))
+  sum[[i]]$log<-log2(sum[[i]]$num)
+  p[[i]]<-ggplot(sum[[i]],aes(x = time, y = num, fill = class)) +
+    geom_bar(stat = "identity",position = position_dodge(), width=0.5, linewidth = 0.25)+
+    labs(x = 'Time', y = 'Log2_Number', title = unique(sum[[i]]$cell)) + ylim(0, 1200)+
+    scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+}
+
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+p<-list()
+for (i in 1:length(df)) {
+  sum[[i]]$time<-factor(sum[[i]]$time,levels = c('wk1','wk2','wk3','mon8'))
+  sum[[i]]$class<-factor(sum[[i]]$class,levels = c('wk1_reinforcing','wk1_reversing','wk2_reinforcing','wk2_reversing','wk3_reinforcing','wk3_reversing','mon8_reinforcing','mon8_reversing'))
+  sum[[i]]$log<-log2(sum[[i]]$num)
+  p[[i]]<-ggplot(sum[[i]],aes(x = time, y = num, fill = class)) +
+    geom_bar(stat = "identity",position = position_dodge(), width=0.5, linewidth = 0.25)+
+    labs(x = 'Time', y = 'Log2_Number', title = unique(sum[[i]]$cell)) + ylim(0, 11)+
+    scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+}
+
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+all_reversing_sum<-data.frame()
+all_reinforcing_sum<-data.frame()
+reversing_sum<-list()
+reinforcing_sum<-list()
+
+all_sum<-data.frame()
+for (i in 1:21) {
+  all_sum<-rbind(all_sum,sum[[i]])
+
+}
+
+reversing_sum<-subset(all_sum,all_sum$class%in%c('wk1_reversing','wk2_reversing','wk3_reversing','mon8_reversing'))
+reinforcing_sum<-subset(all_sum,all_sum$class%in%c('wk1_reinforcing','wk2_reinforcing','wk3_reinforcing','mon8_reinforcing'))
+
+lung_cell <- read_csv("E:/high adaption/analysis/cell_annation/result/lung_cell.csv")
+colnames(reversing_sum)<-c('num','time','Var1','class','log')
+reversing_sum<-left_join(reversing_sum,lung_cell)
+avg_ratio <- reversing_sum %>%
+  group_by(Var1) %>%
+  summarise(avg_ratio = mean(num)) %>%
+  arrange(desc(avg_ratio))
+avg_ratio<-left_join(avg_ratio,lung_cell)
+avg_ratio$col<-factor(avg_ratio$col,levels =unique(avg_ratio$col))
+avg_ratio$Var1<-factor(avg_ratio$Var1,levels =unique(avg_ratio$Var1))
+colnames(avg_ratio)<-c('Var1','num','majior','col')
+coll<-as.character(avg_ratio$col)
+ggplot(avg_ratio,aes(Var1,num,fill=Var1))+geom_bar(stat="identity")+theme_classic()+scale_fill_manual(values=coll)+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+  )
+
+colnames(reinforcing_sum)<-c('num','time','Var1','class','log')
+reinforcing_sum<-left_join(reinforcing_sum,lung_cell)
+avg_ratio <- reinforcing_sum %>%
+  group_by(Var1) %>%
+  summarise(avg_ratio = mean(num)) %>%
+  arrange(desc(avg_ratio))
+avg_ratio<-left_join(avg_ratio,lung_cell)
+avg_ratio$col<-factor(avg_ratio$col,levels =unique(avg_ratio$col))
+avg_ratio$Var1<-factor(avg_ratio$Var1,levels =unique(avg_ratio$Var1))
+colnames(avg_ratio)<-c('Var1','num','majior','col')
+coll<-as.character(avg_ratio$col)
+ggplot(avg_ratio,aes(Var1,num,fill=Var1))+geom_bar(stat="identity")+theme_classic()+scale_fill_manual(values=coll)+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+  )
+
+
+tt<-rbind(sum[[1]],sum[[2]],sum[[3]],sum[[4]],sum[[5]],sum[[6]],sum[[7]],sum[[8]],sum[[9]],sum[[10]],sum[[11]],sum[[12]],sum[[13]],sum[[14]],sum[[15]],sum[[16]],sum[[17]])
+tt <- tt %>%
+  separate(class, into = c("time", "group"), sep = "_")
+df_avg <- tt %>%
+  group_by(cell, group) %>%
+  summarise(avg_num = mean(num)) %>%
+  ungroup()
+df_sum <- df_avg %>%
+  group_by(cell) %>%
+  summarise(total_avg = sum(avg_num)) %>%
+  arrange(desc(total_avg))
+tt$cell <- factor(tt$cell, levels = df_sum$cell)
+
+ggplot(tt, aes(fill=group, y=log2(num), x=cell)) +
+  geom_boxplot()+
+  stat_summary(fun = "mean", geom = "point",position = position_dodge(0.2)) +
+  stat_summary(fun.data = "mean_sd", geom = "errorbar", width = .10,
+               size = 0.1,
+               position = position_dodge(0.2)) +
+  theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+  ) +
+  scale_fill_manual(values = c('#9bd9ff','#ff999a'))
+
+
+tt<-rbind(fst[[1]],fst[[2]],fst[[3]],fst[[4]],fst[[5]],fst[[6]],fst[[7]],fst[[8]],fst[[9]],fst[[10]],fst[[11]],fst[[12]],fst[[13]],fst[[14]],fst[[15]],fst[[16]],fst[[17]])
+tt <- tt %>%
+  separate(class, into = c("time", "group"), sep = "_")
+df_avg <- tt %>%
+  group_by(cell, group) %>%
+  summarise(avg_num = mean(num)) %>%
+  ungroup()
+df_fst <- df_avg %>%
+  group_by(cell) %>%
+  summarise(total_avg = sum(avg_num)) %>%
+  arrange(desc(total_avg))
+tt$cell <- factor(tt$cell, levels = df_fst$cell)
+
+ggplot(tt, aes(fill=group, y=log2(num), x=cell)) +
+  geom_boxplot() +
+  stat_summary(fun = "mean", geom = "point",position = position_dodge(0.2)) +
+  stat_summary(fun.data = "mean_sd", geom = "errorbar", width = .10,
+               size = 0.1,
+               position = position_dodge(0.2)) +
+  theme_bw()+theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+  ) +scale_fill_manual(values = c('#9bd9ff','#ff999a'))
+
+
+
+
+
+
+
+###int gene
+int_reversing<-list()
+int_reinforcing<-list()
+int<-list()
+int_all<-data.frame()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    int_reversing[[i]]<-length(reversing_gene[[i]]$gene)%>%data.frame()
+    int_reinforcing[[i]]<-length(reinforcing_gene[[i]]$gene)%>%data.frame()
+    int_reversing[[i]]$cell<-df[[i]]
+    int_reinforcing[[i]]$cell<-df[[i]]
+    int_reversing[[i]]$class<-'reversing'
+    int_reinforcing[[i]]$class<-'reinforcing'
+    int_all<-rbind(int_all,int_reversing[[i]],int_reinforcing[[i]])
+    colnames(int[[i]])<-c('num','cell','class')
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+colnames(int_all)<-c('num','cell','class')
+
+df_sum <- int_all %>%
+  group_by(cell) %>%
+  summarise(total_num = sum(num))
+df_with_total <- int_all %>%
+  left_join(df_sum, by = "cell")
+df_sorted <- df_with_total %>%
+  arrange(desc(total_num))
+int_all <- int_all %>%
+  mutate(cell = factor(cell, levels = unique(df_sorted$cell))) %>%
+  arrange(cell)
+ggplot(int_all,aes(x = cell, y = num, fill = class)) +
+  geom_bar(stat = "identity",position = position_dodge(), width=0.5, linewidth = 0.25)+
+  scale_fill_manual(values = c('#9bd9ff','#ff999a'))+theme_classic()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+
+#####################################################################################
+####FST gene
+library(readxl)
+top5<- read_excel("E:/high adaption/analysis/GWAS/top5_annotation_ensembl.xlsx")
+
+
+fst_reversing_wk1<-list()
+fst_reversing_wk2<-list()
+fst_reversing_wk3<-list()
+fst_reversing_mon8<-list()
+fst_reinforcing_wk1<-list()
+fst_reinforcing_wk2<-list()
+fst_reinforcing_wk3<-list()
+fst_reinforcing_mon8<-list()
+fst<-list()
+for (i in 1:17){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    fst_reversing_wk1[[i]]<-intersect(reversing_wk1[[i]]$gene,top5$symbol)
+    fst_reversing_wk2[[i]]<-intersect(reversing_wk2[[i]]$gene,top5$symbol)
+    fst_reversing_wk3[[i]]<-intersect(reversing_wk3[[i]]$gene,top5$symbol)
+    fst_reversing_mon8[[i]]<-intersect(reversing_mon8[[i]]$gene,top5$symbol)
+    fst_reinforcing_wk1[[i]]<-intersect(reinforcing_wk1[[i]]$gene,top5$symbol)
+    fst_reinforcing_wk2[[i]]<-intersect(reinforcing_wk2[[i]]$gene,top5$symbol)
+    fst_reinforcing_wk3[[i]]<-intersect(reinforcing_wk3[[i]]$gene,top5$symbol)
+    fst_reinforcing_mon8[[i]]<-intersect(reinforcing_mon8[[i]]$gene,top5$symbol)
+    fst_reversing_wk1[[i]]<-length(fst_reversing_wk1[[i]])%>%data.frame()
+    fst_reversing_wk2[[i]]<-length(fst_reversing_wk2[[i]])%>%data.frame()
+    fst_reversing_wk3[[i]]<-length(fst_reversing_wk3[[i]])%>%data.frame()
+    fst_reversing_mon8[[i]]<-length(fst_reversing_mon8[[i]])%>%data.frame()
+    fst_reinforcing_wk1[[i]]<-length(fst_reinforcing_wk1[[i]])%>%data.frame()
+    fst_reinforcing_wk2[[i]]<-length(fst_reinforcing_wk2[[i]])%>%data.frame()
+    fst_reinforcing_wk3[[i]]<-length(fst_reinforcing_wk3[[i]])%>%data.frame()
+    fst_reinforcing_mon8[[i]]<-length(fst_reinforcing_mon8[[i]])%>%data.frame()
+    fst_reversing_wk1[[i]]$time<-'wk1'
+    fst_reversing_wk2[[i]]$time<-'wk2'
+    fst_reversing_wk3[[i]]$time<-'wk3'
+    fst_reversing_mon8[[i]]$time<-'mon8'
+    fst_reinforcing_wk1[[i]]$time<-'wk1'
+    fst_reinforcing_wk2[[i]]$time<-'wk2'
+    fst_reinforcing_wk3[[i]]$time<-'wk3'
+    fst_reinforcing_mon8[[i]]$time<-'mon8'
+    fst_reversing_wk1[[i]]$cell<-df[[i]]
+    fst_reversing_wk2[[i]]$cell<-df[[i]]
+    fst_reversing_wk3[[i]]$cell<-df[[i]]
+    fst_reversing_mon8[[i]]$cell<-df[[i]]
+    fst_reinforcing_wk1[[i]]$cell<-df[[i]]
+    fst_reinforcing_wk2[[i]]$cell<-df[[i]]
+    fst_reinforcing_wk3[[i]]$cell<-df[[i]]
+    fst_reinforcing_mon8[[i]]$cell<-df[[i]]
+    fst_reversing_wk1[[i]]$class<-'wk1_reversing'
+    fst_reversing_wk2[[i]]$class<-'wk2_reversing'
+    fst_reversing_wk3[[i]]$class<-'wk3_reversing'
+    fst_reversing_mon8[[i]]$class<-'mon8_reversing'
+    fst_reinforcing_wk1[[i]]$class<-'wk1_reinforcing'
+    fst_reinforcing_wk2[[i]]$class<-'wk2_reinforcing'
+    fst_reinforcing_wk3[[i]]$class<-'wk3_reinforcing'
+    fst_reinforcing_mon8[[i]]$class<-'mon8_reinforcing'
+    fst[[i]]<-rbind(fst_reversing_wk1[[i]],fst_reversing_wk2[[i]],fst_reversing_wk3[[i]],fst_reversing_mon8[[i]],fst_reinforcing_wk1[[i]],fst_reinforcing_wk2[[i]],fst_reinforcing_wk3[[i]],fst_reinforcing_mon8[[i]])
+    colnames(fst[[i]])<-c('num','time','cell','class')
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    fst[[i]]$time<-factor(fst[[i]]$time,levels = c('wk1','wk2','wk3','mon8'))
+    fst[[i]]$class<-factor(fst[[i]]$class,levels = c('wk1_reinforcing','wk1_reversing','wk2_reinforcing','wk2_reversing','wk3_reinforcing','wk3_reversing','mon8_reinforcing','mon8_reversing'))
+    fst[[i]]$log<-log2(fst[[i]]$num)
+    p[[i]]<-ggplot(fst[[i]],aes(x = time, y = log, fill = class)) +
+      geom_bar(stat = "identity",position = position_dodge(), width=0.5, linewidth = 0.25)+
+      labs(x = 'Time', y = 'log2_fst', title = unique(fst[[i]]$cell)) + ylim(0, 8)+
+      scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    fst[[i]]$time<-factor(fst[[i]]$time,levels = c('wk1','wk2','wk3','mon8'))
+    fst[[i]]$class<-factor(fst[[i]]$class,levels = c('wk1_reinforcing','wk1_reversing','wk2_reinforcing','wk2_reversing','wk3_reinforcing','wk3_reversing','mon8_reinforcing','mon8_reversing'))
+    fst[[i]]$log<-log2(fst[[i]]$num)
+    p[[i]]<-ggplot(fst[[i]],aes(x = time, y = num, fill = class)) +
+      geom_bar(stat = "identity",position = position_dodge(), width=0.5, linewidth = 0.25)+
+      labs(x = 'Time', y = 'log2_fst', title = unique(fst[[i]]$cell)) + ylim(0, 110)+
+      scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+
+
+fst_reversing_wk1<-list()
+fst_reversing_wk2<-list()
+fst_reversing_wk3<-list()
+fst_reversing_mon8<-list()
+fst_reinforcing_wk1<-list()
+fst_reinforcing_wk2<-list()
+fst_reinforcing_wk3<-list()
+fst_reinforcing_mon8<-list()
+fst<-list()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    fst_reversing_wk1[[i]]<-intersect(reversing_wk1[[i]]$gene,top5$symbol)
+    fst_reversing_wk2[[i]]<-intersect(reversing_wk2[[i]]$gene,top5$symbol)
+    fst_reversing_wk3[[i]]<-intersect(reversing_wk3[[i]]$gene,top5$symbol)
+    fst_reversing_mon8[[i]]<-intersect(reversing_mon8[[i]]$gene,top5$symbol)
+    fst_reinforcing_wk1[[i]]<-intersect(reinforcing_wk1[[i]]$gene,top5$symbol)
+    fst_reinforcing_wk2[[i]]<-intersect(reinforcing_wk2[[i]]$gene,top5$symbol)
+    fst_reinforcing_wk3[[i]]<-intersect(reinforcing_wk3[[i]]$gene,top5$symbol)
+    fst_reinforcing_mon8[[i]]<-intersect(reinforcing_mon8[[i]]$gene,top5$symbol)
+    #fst_reversing_wk1[[i]]<-length(fst_reversing_wk1[[i]])%>%data.frame()
+    #fst_reversing_wk2[[i]]<-length(fst_reversing_wk2[[i]])%>%data.frame()
+    #fst_reversing_wk3[[i]]<-length(fst_reversing_wk3[[i]])%>%data.frame()
+    #fst_reversing_mon8[[i]]<-length(fst_reversing_mon8[[i]])%>%data.frame()
+    #fst_reinforcing_wk1[[i]]<-length(fst_reinforcing_wk1[[i]])%>%data.frame()
+    #fst_reinforcing_wk2[[i]]<-length(fst_reinforcing_wk2[[i]])%>%data.frame()
+    #fst_reinforcing_wk3[[i]]<-length(fst_reinforcing_wk3[[i]])%>%data.frame()
+    #fst_reinforcing_mon8[[i]]<-length(fst_reinforcing_mon8[[i]])%>%data.frame()
+    #fst_reversing_wk1[[i]]$time<-'wk1'
+    #fst_reversing_wk2[[i]]$time<-'wk2'
+    #fst_reversing_wk3[[i]]$time<-'wk3'
+    #fst_reversing_mon8[[i]]$time<-'mon8'
+    #fst_reinforcing_wk1[[i]]$time<-'wk1'
+    #fst_reinforcing_wk2[[i]]$time<-'wk2'
+    #fst_reinforcing_wk3[[i]]$time<-'wk3'
+    #fst_reinforcing_mon8[[i]]$time<-'mon8'
+    #fst_reversing_wk1[[i]]$cell<-df[[i]]
+    #fst_reversing_wk2[[i]]$cell<-df[[i]]
+    #fst_reversing_wk3[[i]]$cell<-df[[i]]
+    #fst_reversing_mon8[[i]]$cell<-df[[i]]
+    #fst_reinforcing_wk1[[i]]$cell<-df[[i]]
+    #fst_reinforcing_wk2[[i]]$cell<-df[[i]]
+    #fst_reinforcing_wk3[[i]]$cell<-df[[i]]
+    #fst_reinforcing_mon8[[i]]$cell<-df[[i]]
+    #fst_reversing_wk1[[i]]$class<-'wk1_reversing'
+    #fst_reversing_wk2[[i]]$class<-'wk2_reversing'
+    #fst_reversing_wk3[[i]]$class<-'wk3_reversing'
+    #fst_reversing_mon8[[i]]$class<-'mon8_reversing'
+    #fst_reinforcing_wk1[[i]]$class<-'wk1_reinforcing'
+    #fst_reinforcing_wk2[[i]]$class<-'wk2_reinforcing'
+    #fst_reinforcing_wk3[[i]]$class<-'wk3_reinforcing'
+    #fst_reinforcing_mon8[[i]]$class<-'mon8_reinforcing'
+    #fst[[i]]<-rbind(fst_reversing_wk1[[i]],fst_reversing_wk2[[i]],fst_reversing_wk3[[i]],fst_reversing_mon8[[i]],fst_reinforcing_wk1[[i]],fst_reinforcing_wk2[[i]],fst_reinforcing_wk3[[i]],fst_reinforcing_mon8[[i]])
+    #colnames(fst[[i]])<-c('num','time','cell','class')
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+
+
+########################################################################
+###########HIF1A
+HIF1A <- read_csv("E:/high adaption/analysis/DEG_new/new/kegg/HIF1A.csv")
+
+hif_reversing_wk1<-list()
+hif_reversing_wk2<-list()
+hif_reversing_wk3<-list()
+hif_reversing_mon8<-list()
+hif_reinforcing_wk1<-list()
+hif_reinforcing_wk2<-list()
+hif_reinforcing_wk3<-list()
+hif_reinforcing_mon8<-list()
+hif<-list()
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    hif_reversing_wk1[[i]]<-intersect(reversing_wk1[[i]]$gene,HIF1A$gene)
+    hif_reversing_wk2[[i]]<-intersect(reversing_wk2[[i]]$gene,HIF1A$gene)
+    hif_reversing_wk3[[i]]<-intersect(reversing_wk3[[i]]$gene,HIF1A$gene)
+    hif_reversing_mon8[[i]]<-intersect(reversing_mon8[[i]]$gene,HIF1A$gene)
+    hif_reinforcing_wk1[[i]]<-intersect(reinforcing_wk1[[i]]$gene,HIF1A$gene)
+    hif_reinforcing_wk2[[i]]<-intersect(reinforcing_wk2[[i]]$gene,HIF1A$gene)
+    hif_reinforcing_wk3[[i]]<-intersect(reinforcing_wk3[[i]]$gene,HIF1A$gene)
+    hif_reinforcing_mon8[[i]]<-intersect(reinforcing_mon8[[i]]$gene,HIF1A$gene)
+    #hif_reversing_wk1[[i]]<-length(hif_reversing_wk1[[i]])%>%data.frame()
+    #hif_reversing_wk2[[i]]<-length(hif_reversing_wk2[[i]])%>%data.frame()
+    #hif_reversing_wk3[[i]]<-length(hif_reversing_wk3[[i]])%>%data.frame()
+    #hif_reversing_mon8[[i]]<-length(hif_reversing_mon8[[i]])%>%data.frame()
+    #hif_reinforcing_wk1[[i]]<-length(hif_reinforcing_wk1[[i]])%>%data.frame()
+    #hif_reinforcing_wk2[[i]]<-length(hif_reinforcing_wk2[[i]])%>%data.frame()
+    #hif_reinforcing_wk3[[i]]<-length(hif_reinforcing_wk3[[i]])%>%data.frame()
+    #hif_reinforcing_mon8[[i]]<-length(hif_reinforcing_mon8[[i]])%>%data.frame()
+    #hif_reversing_wk1[[i]]<-length(hif_reversing_wk1[[i]])/ (length(a_up[[i]]$gene)+ length(e_up[[i]]$gene))%>%data.frame()
+    #hif_reversing_wk2[[i]]<-length(hif_reversing_wk2[[i]])/ (length(b_up[[i]]$gene)+ length(f_up[[i]]$gene))%>%data.frame()
+    #hif_reversing_wk3[[i]]<-length(hif_reversing_wk3[[i]])/ (length(c_up[[i]]$gene)+ length(g_up[[i]]$gene))%>%data.frame()
+    #hif_reversing_mon8[[i]]<-length(hif_reversing_mon8[[i]])/ (length(d_up[[i]]$gene)+ length(h_up[[i]]$gene))%>%data.frame()
+    #hif_reinforcing_wk1[[i]]<-length(hif_reinforcing_wk1[[i]])/ (length(a_up[[i]]$gene)+ length(e_up[[i]]$gene))%>%data.frame()
+    #hif_reinforcing_wk2[[i]]<-length(hif_reinforcing_wk2[[i]])/ (length(b_up[[i]]$gene)+ length(f_up[[i]]$gene))%>%data.frame()
+    #hif_reinforcing_wk3[[i]]<-length(hif_reinforcing_wk3[[i]])/ (length(c_up[[i]]$gene)+ length(g_up[[i]]$gene))%>%data.frame()
+    #hif_reinforcing_mon8[[i]]<-length(hif_reinforcing_mon8[[i]])/ (length(d_up[[i]]$gene)+ length(h_up[[i]]$gene))%>%data.frame()
+    #hif_reversing_wk1[[i]]$time<-'wk1'
+    #hif_reversing_wk2[[i]]$time<-'wk2'
+    #hif_reversing_wk3[[i]]$time<-'wk3'
+    #hif_reversing_mon8[[i]]$time<-'mon8'
+    #hif_reinforcing_wk1[[i]]$time<-'wk1'
+    #hif_reinforcing_wk2[[i]]$time<-'wk2'
+    #hif_reinforcing_wk3[[i]]$time<-'wk3'
+    #hif_reinforcing_mon8[[i]]$time<-'mon8'
+    #hif_reversing_wk1[[i]]$cell<-df[[i]]
+    #hif_reversing_wk2[[i]]$cell<-df[[i]]
+    #hif_reversing_wk3[[i]]$cell<-df[[i]]
+    #hif_reversing_mon8[[i]]$cell<-df[[i]]
+    #hif_reinforcing_wk1[[i]]$cell<-df[[i]]
+    #hif_reinforcing_wk2[[i]]$cell<-df[[i]]
+    #hif_reinforcing_wk3[[i]]$cell<-df[[i]]
+    #hif_reinforcing_mon8[[i]]$cell<-df[[i]]
+    #hif[[i]]<-rbind(hif_reversing_wk1[[i]],hif_reversing_wk2[[i]],hif_reversing_wk3[[i]],hif_reversing_mon8[[i]],hif_reinforcing_wk1[[i]],hif_reinforcing_wk2[[i]],hif_reinforcing_wk3[[i]],hif_reinforcing_mon8[[i]])
+    #colnames(hif[[i]])<-c('num','time','cell','class')
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+for (i in 1:length(df)){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    hif[[i]]$time<-factor(hif[[i]]$time,levels = c('wk1','wk2','wk3','mon8'))
+    hif[[i]]$class<-factor(hif[[i]]$class,levels = c('wk1_reinforcing','wk1_reversing','wk2_reinforcing','wk2_reversing','wk3_reinforcing','wk3_reversing','mon8_reinforcing','mon8_reversing'))
+    p[[i]]<-ggplot(hif[[i]],aes(x = time, y = num, fill = class)) +
+      geom_bar(stat = "identity",position = position_dodge(), width=0.5, linewidth = 0.25)+
+      labs(x = 'Time', y = 'Ratio', title = unique(hif[[i]]$cell)) +
+      scale_fill_manual(values = c('#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a','#9bd9ff','#ff999a'))+theme_classic()+
+      theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+all_lists <- list(hif_reinforcing_wk1,hif_reinforcing_wk2,hif_reinforcing_wk3,hif_reinforcing_mon8)
+intersections <- list()
+
+for (i in 1:21) {
+  elements_at_position <- lapply(all_lists, `[[`, i)  # 获取所有列表中第i个子列表
+  intersect_elements <- Reduce(intersect, elements_at_position)  # 计算交集
+  intersections[[i]] <- intersect_elements
+}
+
+
+mon<-subset(lung,idents='Monocyte')
+bubble_data=DotPlot(mon,features = 'GOLGA4',group.by = 'time') #提取数据的简单方法
+bubble_data=bubble_data$data
+gene_wk1 <- bubble_data[c(1, 5, 6), ]
+gene_wk2 <- bubble_data[c(2, 5, 6), ]
+gene_wk3 <- bubble_data[c(3, 5, 6), ]
+gene_mon8 <- bubble_data[c(4, 5, 6), ]
+gene_wk1$time<-'wk1'
+gene_wk2$time<-'wk2'
+gene_wk3$time<-'wk3'
+gene_mon8$time<-'mon8'
+bubble_data<-rbind(gene_wk1,gene_wk2,gene_wk3,gene_mon8)
+bubble_data$id<-c('A','P','T','A','P','T','A','P','T','A','P','T')
+bubble_data$id<-factor(bubble_data$id,levels = c('P','A','T'))
+ggplot(bubble_data, aes(x = id, y = avg.exp.scaled,  color = time,group=time)) +
+  geom_point(size=3) +
+  geom_line() +
+  labs(title = unique(bubble_data$features.plot)) +theme_classic()+scale_color_manual(values=c('steelblue1','slateblue3','chocolate1','palegreen3'))
+
+
+########################################################
+###################gene wilcox_test
+
+library(ggpubr)
+library(rstatix)
+
+####P vs. time
+gene_reversing_wk1<-list()
+gene_reinforcing_wk1<-list()
+gene_reversing_wk2<-list()
+gene_reinforcing_wk2<-list()
+gene_reversing_wk3<-list()
+gene_reinforcing_wk3<-list()
+gene_reversing_mon8<-list()
+gene_reinforcing_mon8<-list()
+stat_t<-list()
+stat_t.test<-list()
+p<-list()
+tt<-list()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    gene_reversing_wk1[[i]] <-subset(a_up[[i]],a_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    gene_reinforcing_wk1[[i]] <-subset(a_up[[i]],a_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    gene_reversing_wk2[[i]] <-subset(b_up[[i]],b_up[[i]]$gene%in%reversing_wk2[[i]]$gene)
+    gene_reinforcing_wk2[[i]] <-subset(b_up[[i]],b_up[[i]]$gene%in%reinforcing_wk2[[i]]$gene)
+    gene_reversing_wk3[[i]] <-subset(c_up[[i]],c_up[[i]]$gene%in%reversing_wk3[[i]]$gene)
+    gene_reinforcing_wk3[[i]] <-subset(c_up[[i]],c_up[[i]]$gene%in%reinforcing_wk3[[i]]$gene)
+    gene_reversing_mon8[[i]] <-subset(d_up[[i]],d_up[[i]]$gene%in%reversing_mon8[[i]]$gene)
+    gene_reinforcing_mon8[[i]] <-subset(d_up[[i]],d_up[[i]]$gene%in%reinforcing_mon8[[i]]$gene)
+    gene_reversing_wk1[[i]]$group<-'reversing'
+    gene_reinforcing_wk1[[i]]$group<-'reinforcing'
+    gene_reversing_wk2[[i]]$group<-'reversing'
+    gene_reinforcing_wk2[[i]]$group<-'reinforcing'
+    gene_reversing_wk3[[i]]$group<-'reversing'
+    gene_reinforcing_wk3[[i]]$group<-'reinforcing'
+    gene_reversing_mon8[[i]]$group<-'reversing'
+    gene_reinforcing_mon8[[i]]$group<-'reinforcing'
+    tt[[i]]<-rbind(gene_reversing_wk1[[i]],gene_reinforcing_wk1[[i]],gene_reversing_wk2[[i]],gene_reinforcing_wk2[[i]],gene_reversing_wk3[[i]],gene_reinforcing_wk3[[i]],gene_reversing_mon8[[i]],gene_reinforcing_mon8[[i]])
+    tt[[i]]$FC <- abs(tt[[i]]$avg_log2FC)
+    stat_t[[i]] <- wilcox_test(group_by(tt[[i]], time), FC~group)
+    stat_t[[i]] <- add_significance(stat_t[[i]], 'p')
+    stat_t.test[[i]] <-  add_xy_position(stat_t[[i]], x = 'time')
+    p[[i]]<-ggboxplot(tt[[i]], x = 'time', y = 'FC', fill = 'group',
+                      color = 'gray30', width = 0.6, size = 0.1, legend = 'right',outlier.shape = NA)+ylim(0, 6)+
+      scale_fill_manual(values = c('#9bd9ff','#ff999a'))+ stat_pvalue_manual(stat_t.test[[i]],  label = '{p.signif}',y.position = 5.5)+labs(x = 'Time', y = 'FC', title = unique(tt[[i]]$class))
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+####time vs. Tibetan
+gene_reversing_wk1<-list()
+gene_reinforcing_wk1<-list()
+gene_reversing_wk2<-list()
+gene_reinforcing_wk2<-list()
+gene_reversing_wk3<-list()
+gene_reinforcing_wk3<-list()
+gene_reversing_mon8<-list()
+gene_reinforcing_mon8<-list()
+stat_t<-list()
+stat_t.test<-list()
+p<-list()
+tt<-list()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    gene_reversing_wk1[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    gene_reinforcing_wk1[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    gene_reversing_wk2[[i]] <-subset(f_up[[i]],f_up[[i]]$gene%in%reversing_wk2[[i]]$gene)
+    gene_reinforcing_wk2[[i]] <-subset(f_up[[i]],f_up[[i]]$gene%in%reinforcing_wk2[[i]]$gene)
+    gene_reversing_wk3[[i]] <-subset(g_up[[i]],g_up[[i]]$gene%in%reversing_wk3[[i]]$gene)
+    gene_reinforcing_wk3[[i]] <-subset(g_up[[i]],g_up[[i]]$gene%in%reinforcing_wk3[[i]]$gene)
+    gene_reversing_mon8[[i]] <-subset(h_up[[i]],h_up[[i]]$gene%in%reversing_mon8[[i]]$gene)
+    gene_reinforcing_mon8[[i]] <-subset(h_up[[i]],h_up[[i]]$gene%in%reinforcing_mon8[[i]]$gene)
+    gene_reversing_wk1[[i]]$group<-'reversing'
+    gene_reinforcing_wk1[[i]]$group<-'reinforcing'
+    gene_reversing_wk2[[i]]$group<-'reversing'
+    gene_reinforcing_wk2[[i]]$group<-'reinforcing'
+    gene_reversing_wk3[[i]]$group<-'reversing'
+    gene_reinforcing_wk3[[i]]$group<-'reinforcing'
+    gene_reversing_mon8[[i]]$group<-'reversing'
+    gene_reinforcing_mon8[[i]]$group<-'reinforcing'
+    tt[[i]]<-rbind(gene_reversing_wk1[[i]],gene_reinforcing_wk1[[i]],gene_reversing_wk2[[i]],gene_reinforcing_wk2[[i]],gene_reversing_wk3[[i]],gene_reinforcing_wk3[[i]],gene_reversing_mon8[[i]],gene_reinforcing_mon8[[i]])
+    tt[[i]]$FC <- abs(tt[[i]]$avg_log2FC)
+    stat_t[[i]] <- wilcox_test(group_by(tt[[i]], time), FC~group)
+    stat_t[[i]] <- add_significance(stat_t[[i]], 'p')
+    stat_t.test[[i]] <-  add_xy_position(stat_t[[i]], x = 'time')
+    p[[i]]<-ggboxplot(tt[[i]], x = 'time', y = 'FC', fill = 'group',
+                      color = 'gray30', width = 0.6, size = 0.5, legend = 'right',outlier.shape = NA)+ylim(0, 6)+
+      scale_fill_manual(values = c('#9bd9ff','#ff999a'))+ stat_pvalue_manual(stat_t.test[[i]],  label = '{p.signif}', tip.length = 0.05,y.position = 5.5)+labs(x = 'Time', y = 'FC', title = unique(tt[[i]]$class))
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+########reversing gene p vs. ts wilcox-test
+p_reversing_wk1<-list()
+p_reversing_wk2<-list()
+p_reversing_wk3<-list()
+p_reversing_mon8<-list()
+ts_reversing_wk1<-list()
+ts_reversing_wk2<-list()
+ts_reversing_wk3<-list()
+ts_reversing_mon8<-list()
+
+stat_t<-list()
+stat_t.test<-list()
+p<-list()
+tt<-list()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    p_reversing_wk1[[i]] <-subset(a_up[[i]],a_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    ts_reversing_wk1[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    p_reversing_wk2[[i]] <-subset(b_up[[i]],b_up[[i]]$gene%in%reversing_wk2[[i]]$gene)
+    ts_reversing_wk2[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    p_reversing_wk3[[i]] <-subset(c_up[[i]],c_up[[i]]$gene%in%reversing_wk3[[i]]$gene)
+    ts_reversing_wk3[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    p_reversing_mon8[[i]] <-subset(d_up[[i]],d_up[[i]]$gene%in%reversing_mon8[[i]]$gene)
+    ts_reversing_mon8[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reversing_wk1[[i]]$gene)
+    p_reversing_wk1[[i]]$group<-'p'
+    p_reversing_wk2[[i]]$group<-'p'
+    p_reversing_wk3[[i]]$group<-'p'
+    p_reversing_mon8[[i]]$group<-'p'
+    ts_reversing_wk1[[i]]$group<-'ts'
+    ts_reversing_wk2[[i]]$group<-'ts'
+    ts_reversing_wk3[[i]]$group<-'ts'
+    ts_reversing_mon8[[i]]$group<-'ts'
+    p_reversing_wk1[[i]]$time<-'wk1'
+    p_reversing_wk2[[i]]$time<-'wk2'
+    p_reversing_wk3[[i]]$time<-'wk3'
+    p_reversing_mon8[[i]]$time<-'mon8'
+    ts_reversing_wk1[[i]]$time<-'wk1'
+    ts_reversing_wk2[[i]]$time<-'wk2'
+    ts_reversing_wk3[[i]]$time<-'wk3'
+    ts_reversing_mon8[[i]]$time<-'mon8'
+    tt[[i]]<-rbind(p_reversing_wk1[[i]],p_reversing_wk2[[i]],p_reversing_wk3[[i]],p_reversing_mon8[[i]],ts_reversing_wk1[[i]],ts_reversing_wk2[[i]],ts_reversing_wk3[[i]],ts_reversing_mon8[[i]])
+    tt[[i]]$FC <- abs(tt[[i]]$avg_log2FC)
+    stat_t[[i]] <- wilcox_test(group_by(tt[[i]], time), FC~group)
+    stat_t[[i]] <- add_significance(stat_t[[i]], 'p')
+    stat_t.test[[i]] <-  add_xy_position(stat_t[[i]], x = 'time')
+    p[[i]]<-ggboxplot(tt[[i]], x = 'time', y = 'FC', fill = 'group',
+                      color = 'gray30', width = 0.6, size = 0.1, legend = 'right',outlier.shape = NA)+ylim(0, 6)+
+      scale_fill_manual(values = c('#FBB957','#93B5CF'))+ stat_pvalue_manual(stat_t.test[[i]],  label = '{p.signif}',y.position = 5.5)+labs(x = 'Time', y = 'FC', title = unique(tt[[i]]$class))
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+########reinforcing gene p vs. ts wilcox-test
+p_reinforcing_wk1<-list()
+p_reinforcing_wk2<-list()
+p_reinforcing_wk3<-list()
+p_reinforcing_mon8<-list()
+ts_reinforcing_wk1<-list()
+ts_reinforcing_wk2<-list()
+ts_reinforcing_wk3<-list()
+ts_reinforcing_mon8<-list()
+
+stat_t<-list()
+stat_t.test<-list()
+p<-list()
+tt<-list()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    p_reinforcing_wk1[[i]] <-subset(a_up[[i]],a_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    ts_reinforcing_wk1[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    p_reinforcing_wk2[[i]] <-subset(b_up[[i]],b_up[[i]]$gene%in%reinforcing_wk2[[i]]$gene)
+    ts_reinforcing_wk2[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    p_reinforcing_wk3[[i]] <-subset(c_up[[i]],c_up[[i]]$gene%in%reinforcing_wk3[[i]]$gene)
+    ts_reinforcing_wk3[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    p_reinforcing_mon8[[i]] <-subset(d_up[[i]],d_up[[i]]$gene%in%reinforcing_mon8[[i]]$gene)
+    ts_reinforcing_mon8[[i]] <-subset(e_up[[i]],e_up[[i]]$gene%in%reinforcing_wk1[[i]]$gene)
+    p_reinforcing_wk1[[i]]$group<-'p'
+    p_reinforcing_wk2[[i]]$group<-'p'
+    p_reinforcing_wk3[[i]]$group<-'p'
+    p_reinforcing_mon8[[i]]$group<-'p'
+    ts_reinforcing_wk1[[i]]$group<-'ts'
+    ts_reinforcing_wk2[[i]]$group<-'ts'
+    ts_reinforcing_wk3[[i]]$group<-'ts'
+    ts_reinforcing_mon8[[i]]$group<-'ts'
+    p_reinforcing_wk1[[i]]$time<-'wk1'
+    p_reinforcing_wk2[[i]]$time<-'wk2'
+    p_reinforcing_wk3[[i]]$time<-'wk3'
+    p_reinforcing_mon8[[i]]$time<-'mon8'
+    ts_reinforcing_wk1[[i]]$time<-'wk1'
+    ts_reinforcing_wk2[[i]]$time<-'wk2'
+    ts_reinforcing_wk3[[i]]$time<-'wk3'
+    ts_reinforcing_mon8[[i]]$time<-'mon8'
+    tt[[i]]<-rbind(p_reinforcing_wk1[[i]],p_reinforcing_wk2[[i]],p_reinforcing_wk3[[i]],p_reinforcing_mon8[[i]],ts_reinforcing_wk1[[i]],ts_reinforcing_wk2[[i]],ts_reinforcing_wk3[[i]],ts_reinforcing_mon8[[i]])
+    tt[[i]]$FC <- abs(tt[[i]]$avg_log2FC)
+    stat_t[[i]] <- wilcox_test(group_by(tt[[i]], time), FC~group)
+    stat_t[[i]] <- add_significance(stat_t[[i]], 'p')
+    stat_t.test[[i]] <-  add_xy_position(stat_t[[i]], x = 'time')
+    p[[i]]<-ggboxplot(tt[[i]], x = 'time', y = 'FC', fill = 'group',
+                      color = 'gray30', width = 0.6, size = 0.1, legend = 'right',outlier.shape = NA)+ylim(0, 6)+
+      scale_fill_manual(values = c('#FBB957','#93B5CF'))+ stat_pvalue_manual(stat_t.test[[i]],  label = '{p.signif}',y.position = 5.5)+labs(x = 'Time', y = 'FC', title = unique(tt[[i]]$class))
+
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+
+
+
+
+
+########################################################
+###################Fst gene wilcox_test
+fst_gene_reversing_wk1<-list()
+fst_gene_reinforcing_wk1<-list()
+fst_gene_reversing_wk2<-list()
+fst_gene_reinforcing_wk2<-list()
+fst_gene_reversing_wk3<-list()
+fst_gene_reinforcing_wk3<-list()
+fst_gene_reversing_mon8<-list()
+fst_gene_reinforcing_mon8<-list()
+stat_t<-list()
+stat_t.test<-list()
+p<-list()
+tt<-list()
+average_fst <- top5 %>%
+  group_by(symbol) %>%
+  summarise(mean_fst = mean(fst, na.rm = TRUE))
+colnames(average_fst)<-c('symbol','fst')
+for (i in 1:21){
+  tryCatch({
+    fst_gene_reversing_wk1[[i]]<-as.data.frame(fst_reversing_wk1[[i]])
+    fst_gene_reversing_wk2[[i]]<-as.data.frame(fst_reversing_wk2[[i]])
+    fst_gene_reversing_wk3[[i]]<-as.data.frame(fst_reversing_wk3[[i]])
+    fst_gene_reversing_mon8[[i]]<-as.data.frame(fst_reversing_mon8[[i]])
+    fst_gene_reinforcing_wk1[[i]]<-as.data.frame(fst_reinforcing_wk1[[i]])
+    fst_gene_reinforcing_wk2[[i]]<-as.data.frame(fst_reinforcing_wk2[[i]])
+    fst_gene_reinforcing_wk3[[i]]<-as.data.frame(fst_reinforcing_wk3[[i]])
+    fst_gene_reinforcing_mon8[[i]]<-as.data.frame(fst_reinforcing_mon8[[i]])
+    colnames(fst_gene_reversing_wk1[[i]])<-'symbol'
+    colnames(fst_gene_reversing_wk2[[i]])<-'symbol'
+    colnames(fst_gene_reversing_wk3[[i]])<-'symbol'
+    colnames(fst_gene_reversing_mon8[[i]])<-'symbol'
+    colnames(fst_gene_reinforcing_wk1[[i]])<-'symbol'
+    colnames(fst_gene_reinforcing_wk2[[i]])<-'symbol'
+    colnames(fst_gene_reinforcing_wk3[[i]])<-'symbol'
+    colnames(fst_gene_reinforcing_mon8[[i]])<-'symbol'
+    fst_gene_reversing_wk1[[i]]<-left_join(fst_gene_reversing_wk1[[i]],average_fst)
+    fst_gene_reversing_wk2[[i]]<-left_join(fst_gene_reversing_wk2[[i]],average_fst)
+    fst_gene_reversing_wk3[[i]]<-left_join(fst_gene_reversing_wk3[[i]],average_fst)
+    fst_gene_reversing_mon8[[i]]<-left_join(fst_gene_reversing_mon8[[i]],average_fst)
+    fst_gene_reinforcing_wk1[[i]]<-left_join(fst_gene_reinforcing_wk1[[i]],average_fst)
+    fst_gene_reinforcing_wk2[[i]]<-left_join(fst_gene_reinforcing_wk2[[i]],average_fst)
+    fst_gene_reinforcing_wk3[[i]]<-left_join(fst_gene_reinforcing_wk3[[i]],average_fst)
+    fst_gene_reinforcing_mon8[[i]]<-left_join(fst_gene_reinforcing_mon8[[i]],average_fst)
+    fst_gene_reversing_wk1[[i]]$group<-'reversing'
+    fst_gene_reinforcing_wk1[[i]]$group<-'reinforcing'
+    fst_gene_reversing_wk2[[i]]$group<-'reversing'
+    fst_gene_reinforcing_wk2[[i]]$group<-'reinforcing'
+    fst_gene_reversing_wk3[[i]]$group<-'reversing'
+    fst_gene_reinforcing_wk3[[i]]$group<-'reinforcing'
+    fst_gene_reversing_mon8[[i]]$group<-'reversing'
+    fst_gene_reinforcing_mon8[[i]]$group<-'reinforcing'
+    fst_gene_reversing_wk1[[i]]$time<-'wk1'
+    fst_gene_reinforcing_wk1[[i]]$time<-'wk1'
+    fst_gene_reversing_wk2[[i]]$time<-'wk2'
+    fst_gene_reinforcing_wk2[[i]]$time<-'wk2'
+    fst_gene_reversing_wk3[[i]]$time<-'wk3'
+    fst_gene_reinforcing_wk3[[i]]$time<-'wk3'
+    fst_gene_reversing_mon8[[i]]$time<-'mon8'
+    fst_gene_reinforcing_mon8[[i]]$time<-'mon8'
+    fst_gene_reversing_wk1[[i]]$cell<-df[[i]]
+    fst_gene_reinforcing_wk1[[i]]$cell<-df[[i]]
+    fst_gene_reversing_wk2[[i]]$cell<-df[[i]]
+    fst_gene_reinforcing_wk2[[i]]$cell<-df[[i]]
+    fst_gene_reversing_wk3[[i]]$cell<-df[[i]]
+    fst_gene_reinforcing_wk3[[i]]$cell<-df[[i]]
+    fst_gene_reversing_mon8[[i]]$cell<-df[[i]]
+    fst_gene_reinforcing_mon8[[i]]$cell<-df[[i]]
+    tt[[i]]<-rbind(fst_gene_reversing_wk1[[i]],fst_gene_reinforcing_wk1[[i]],fst_gene_reversing_wk2[[i]],fst_gene_reinforcing_wk2[[i]],fst_gene_reversing_wk3[[i]],fst_gene_reinforcing_wk3[[i]],fst_gene_reversing_mon8[[i]],fst_gene_reinforcing_mon8[[i]])
+    tt[[i]]$log<-log2(tt[[i]]$fst+1)
+    stat_t[[i]] <- wilcox_test(group_by(tt[[i]], time), log~group)
+    stat_t[[i]] <- add_significance(stat_t[[i]], 'p')
+    stat_t.test[[i]] <-  add_xy_position(stat_t[[i]], x = 'time')
+    p[[i]]<-ggplot(tt[[i]], aes(fill=group, y=fst, x=time)) +
+      geom_split_violin( trim =T,color = NA,width =1) +
+      stat_summary(fun = "mean", geom = "point",position = position_dodge(0.2)) +
+      stat_summary(fun.data = "mean_sd", geom = "errorbar", width = .10,
+                   size = 0.1,
+                   position = position_dodge(0.2)) +
+      theme_bw()+theme(
+        panel.grid = element_blank(),
+        axis.title = element_blank(),
+        axis.ticks = element_blank(),
+        axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 8,color="black"),
+      ) +scale_fill_manual(values = c('#9bd9ff','#ff999a'))+labs(x = 'Time', y = 'Fst', title = unique(tt[[i]]$cell))
+}, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+
+########################表型可塑性结合分析
+sig_genelist <- read_excel("E:/high adaption/analysis/plasticity/sig. genelist.xlsx")
+lung_phe<-subset(sig_genelist,sig_genelist$Tissue%in%'lung')
+colnames(lung_phe)<-gsub('Cell type','Cell_type',colnames(lung_phe))
+
+lung_phe_gene_cell<-list()
+lung_phe_gene_pos<-list()
+lung_phe_gene_neg<-list()
+int_reversing_up_phe_pos_wk1<-list()
+int_reversing_up_phe_pos_wk2<-list()
+int_reversing_up_phe_pos_wk3<-list()
+int_reversing_up_phe_pos_mon8<-list()
+int_reversing_down_phe_pos_wk1<-list()
+int_reversing_down_phe_pos_wk2<-list()
+int_reversing_down_phe_pos_wk3<-list()
+int_reversing_down_phe_pos_mon8<-list()
+int_reversing_up_phe_neg_wk1<-list()
+int_reversing_up_phe_neg_wk2<-list()
+int_reversing_up_phe_neg_wk3<-list()
+int_reversing_up_phe_neg_mon8<-list()
+int_reversing_down_phe_neg_wk1<-list()
+int_reversing_down_phe_neg_wk2<-list()
+int_reversing_down_phe_neg_wk3<-list()
+int_reversing_down_phe_neg_mon8<-list()
+
+for (i in 1:21) {
+  lung_phe_gene_cell[[i]]<-subset(lung_phe,lung_phe$Cell_type%in%df[[i]])
+  lung_phe_gene_pos[[i]]<-subset(lung_phe_gene_cell[[i]],lung_phe_gene_cell[[i]]$rho>0)
+  lung_phe_gene_neg[[i]]<-subset(lung_phe_gene_cell[[i]],lung_phe_gene_cell[[i]]$rho<0)
+  int_reversing_up_phe_pos_wk1[[i]]<-intersect(int_wk1_up_down[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_up_phe_pos_wk2[[i]]<-intersect(int_wk2_up_down[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_up_phe_pos_wk3[[i]]<-intersect(int_wk3_up_down[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_up_phe_pos_mon8[[i]]<-intersect(int_mon8_up_down[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_down_phe_pos_wk1[[i]]<-intersect(int_wk1_down_up[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_down_phe_pos_wk2[[i]]<-intersect(int_wk2_down_up[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_down_phe_pos_wk3[[i]]<-intersect(int_wk3_down_up[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_down_phe_pos_mon8[[i]]<-intersect(int_mon8_down_up[[i]],lung_phe_gene_pos[[i]]$geneID)
+  int_reversing_up_phe_neg_wk1[[i]]<-intersect(int_wk1_up_down[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_up_phe_neg_wk2[[i]]<-intersect(int_wk2_up_down[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_up_phe_neg_wk3[[i]]<-intersect(int_wk3_up_down[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_up_phe_neg_mon8[[i]]<-intersect(int_mon8_up_down[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_down_phe_neg_wk1[[i]]<-intersect(int_wk1_down_up[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_down_phe_neg_wk2[[i]]<-intersect(int_wk2_down_up[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_down_phe_neg_wk3[[i]]<-intersect(int_wk3_down_up[[i]],lung_phe_gene_neg[[i]]$geneID)
+  int_reversing_down_phe_neg_mon8[[i]]<-intersect(int_mon8_down_up[[i]],lung_phe_gene_neg[[i]]$geneID)
+}
+
+
+
+
+
+lung_phe_gene_cell<-list()
+lung_phe_gene_pos<-list()
+lung_phe_gene_neg<-list()
+int_reversing_up_phe_pos_wk1<-list()
+int_reversing_up_phe_pos_wk2<-list()
+int_reversing_up_phe_pos_wk3<-list()
+int_reversing_up_phe_pos_mon8<-list()
+int_reversing_down_phe_pos_wk1<-list()
+int_reversing_down_phe_pos_wk2<-list()
+int_reversing_down_phe_pos_wk3<-list()
+int_reversing_down_phe_pos_mon8<-list()
+int_reversing_up_phe_neg_wk1<-list()
+int_reversing_up_phe_neg_wk2<-list()
+int_reversing_up_phe_neg_wk3<-list()
+int_reversing_up_phe_neg_mon8<-list()
+int_reversing_down_phe_neg_wk1<-list()
+int_reversing_down_phe_neg_wk2<-list()
+int_reversing_down_phe_neg_wk3<-list()
+int_reversing_down_phe_neg_mon8<-list()
+reversing_phe<-list()
+p<-list()
+for (i in 1:21){
+  tryCatch({
+    lung_phe_gene_cell[[i]]<-subset(lung_phe,lung_phe$Cell_type%in%df[[i]])
+    lung_phe_gene_pos[[i]]<-subset(lung_phe_gene_cell[[i]],lung_phe_gene_cell[[i]]$rho>0)
+    lung_phe_gene_neg[[i]]<-subset(lung_phe_gene_cell[[i]],lung_phe_gene_cell[[i]]$rho<0)
+    int_reversing_up_phe_pos_wk1[[i]]<-length(intersect(int_wk1_up_down[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_pos_wk2[[i]]<-length(intersect(int_wk2_up_down[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_pos_wk3[[i]]<-length(intersect(int_wk3_up_down[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_pos_mon8[[i]]<-length(intersect(int_mon8_up_down[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_pos_wk1[[i]]<-length(intersect(int_wk1_down_up[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_pos_wk2[[i]]<-length(intersect(int_wk2_down_up[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_pos_wk3[[i]]<-length(intersect(int_wk3_down_up[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_pos_mon8[[i]]<-length(intersect(int_mon8_down_up[[i]],lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_neg_wk1[[i]]<-length(intersect(int_wk1_up_down[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_neg_wk2[[i]]<-length(intersect(int_wk2_up_down[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_neg_wk3[[i]]<-length(intersect(int_wk3_up_down[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_neg_mon8[[i]]<-length(intersect(int_mon8_up_down[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_neg_wk1[[i]]<-length(intersect(int_wk1_down_up[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_neg_wk2[[i]]<-length(intersect(int_wk2_down_up[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_neg_wk3[[i]]<-length(intersect(int_wk3_down_up[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_down_phe_neg_mon8[[i]]<-length(intersect(int_mon8_down_up[[i]],lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reversing_up_phe_pos_wk1[[i]]$'time'<-'wk1+'
+    int_reversing_up_phe_pos_wk2[[i]]$'time'<-'wk2+'
+    int_reversing_up_phe_pos_wk3[[i]]$'time'<-'wk3+'
+    int_reversing_up_phe_pos_mon8[[i]]$'time'<-'mon8+'
+    int_reversing_down_phe_pos_wk1[[i]]$'time'<-'wk1-'
+    int_reversing_down_phe_pos_wk2[[i]]$'time'<-'wk2-'
+    int_reversing_down_phe_pos_wk3[[i]]$'time'<-'wk3-'
+    int_reversing_down_phe_pos_mon8[[i]]$'time'<-'mon8-'
+    int_reversing_up_phe_neg_wk1[[i]]$'time'<-'wk1+'
+    int_reversing_up_phe_neg_wk2[[i]]$'time'<-'wk2+'
+    int_reversing_up_phe_neg_wk3[[i]]$'time'<-'wk3+'
+    int_reversing_up_phe_neg_mon8[[i]]$'time'<-'mon8+'
+    int_reversing_down_phe_neg_wk1[[i]]$'time'<-'wk1-'
+    int_reversing_down_phe_neg_wk2[[i]]$'time'<-'wk2-'
+    int_reversing_down_phe_neg_wk3[[i]]$'time'<-'wk3-'
+    int_reversing_down_phe_neg_mon8[[i]]$'time'<-'mon8-'
+    int_reversing_up_phe_pos_wk1[[i]]$'phe'<-'positive'
+    int_reversing_up_phe_pos_wk2[[i]]$'phe'<-'positive'
+    int_reversing_up_phe_pos_wk3[[i]]$'phe'<-'positive'
+    int_reversing_up_phe_pos_mon8[[i]]$'phe'<-'positive'
+    int_reversing_down_phe_pos_wk1[[i]]$'phe'<-'positive'
+    int_reversing_down_phe_pos_wk2[[i]]$'phe'<-'positive'
+    int_reversing_down_phe_pos_wk3[[i]]$'phe'<-'positive'
+    int_reversing_down_phe_pos_mon8[[i]]$'phe'<-'positive'
+    int_reversing_up_phe_neg_wk1[[i]]$'phe'<-'negative'
+    int_reversing_up_phe_neg_wk2[[i]]$'phe'<-'negative'
+    int_reversing_up_phe_neg_wk3[[i]]$'phe'<-'negative'
+    int_reversing_up_phe_neg_mon8[[i]]$'phe'<-'negative'
+    int_reversing_down_phe_neg_wk1[[i]]$'phe'<-'negative'
+    int_reversing_down_phe_neg_wk2[[i]]$'phe'<-'negative'
+    int_reversing_down_phe_neg_wk3[[i]]$'phe'<-'negative'
+    int_reversing_down_phe_neg_mon8[[i]]$'phe'<-'negative'
+    reversing_phe[[i]]<-rbind(int_reversing_up_phe_pos_wk1[[i]],int_reversing_up_phe_pos_wk2[[i]],int_reversing_up_phe_pos_wk3[[i]],int_reversing_up_phe_pos_mon8[[i]],
+                              int_reversing_down_phe_pos_wk1[[i]],int_reversing_down_phe_pos_wk2[[i]],int_reversing_down_phe_pos_wk3[[i]],int_reversing_down_phe_pos_mon8[[i]],
+                              int_reversing_up_phe_neg_wk1[[i]],int_reversing_up_phe_neg_wk2[[i]],int_reversing_up_phe_neg_wk3[[i]],int_reversing_up_phe_neg_mon8[[i]],
+                              int_reversing_down_phe_neg_wk1[[i]],int_reversing_down_phe_neg_wk2[[i]],int_reversing_down_phe_neg_wk3[[i]],int_reversing_down_phe_neg_mon8[[i]])
+    colnames(reversing_phe[[i]])<-c('num','time','phe')
+    p[[i]]<-ggplot(reversing_phe[[i]], aes(x = time, y = num, fill = phe)) +
+      geom_col(width = 0.55, position = position_stack(reverse = TRUE), show.legend = TRUE) +
+      scale_x_discrete(limits = c("wk1+", "wk1-", 3,
+                                  "wk2+", "wk2-", 6,
+                                  "wk3+", "wk3-", 9,
+                                  "mon8+", "mon8-"),
+                       labels = c("wk1+", "wk1-", "",
+                                  "wk2+", "wk2-", "",
+                                  "wk3+", "wk3-", "",
+                                  "mon8+", "mon8-"
+                       )) +
+      scale_fill_manual(values = c( "dodgerblue3","firebrick1")) +ylim(0,45)+labs(x = 'Time', y = 'num', title = df[[i]]) +
+      theme_classic(base_size = 14)+
+      theme(plot.subtitle = element_text(face = "bold", size = 18, hjust = -0.2, vjust = -3),
+            axis.line = element_line(size = 0.3),
+            axis.ticks = element_line(size = 0.3),
+            axis.ticks.length = unit(0.2, "cm"),
+            axis.text.x = element_text(colour = "black",angle = 45, hjust = 0.97, vjust = 0.95))
+  }, error = function(e) {
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+sig_genelist <- read_excel("E:/high adaption/analysis/plasticity/sig. genelist.xlsx")
+lung_phe<-subset(sig_genelist,sig_genelist$Tissue%in%'lung')
+colnames(lung_phe)<-gsub('Cell type','Cell_type',colnames(lung_phe))
+lung_phe_gene_cell<-list()
+lung_phe_gene_pos<-list()
+lung_phe_gene_neg<-list()
+int_reinforcing_up_phe_pos_wk1<-list()
+int_reinforcing_up_phe_pos_wk2<-list()
+int_reinforcing_up_phe_pos_wk3<-list()
+int_reinforcing_up_phe_pos_mon8<-list()
+int_reinforcing_down_phe_pos_wk1<-list()
+int_reinforcing_down_phe_pos_wk2<-list()
+int_reinforcing_down_phe_pos_wk3<-list()
+int_reinforcing_down_phe_pos_mon8<-list()
+int_reinforcing_up_phe_neg_wk1<-list()
+int_reinforcing_up_phe_neg_wk2<-list()
+int_reinforcing_up_phe_neg_wk3<-list()
+int_reinforcing_up_phe_neg_mon8<-list()
+int_reinforcing_down_phe_neg_wk1<-list()
+int_reinforcing_down_phe_neg_wk2<-list()
+int_reinforcing_down_phe_neg_wk3<-list()
+int_reinforcing_down_phe_neg_mon8<-list()
+reinforcing_phe<-list()
+p<-list()
+for (i in 1:21){
+  tryCatch({
+    lung_phe_gene_cell[[i]]<-subset(lung_phe,lung_phe$Cell_type%in%df[[i]])
+    lung_phe_gene_pos[[i]]<-subset(lung_phe_gene_cell[[i]],lung_phe_gene_cell[[i]]$rho>0)
+    lung_phe_gene_neg[[i]]<-subset(lung_phe_gene_cell[[i]],lung_phe_gene_cell[[i]]$rho<0)
+    int_reinforcing_up_phe_pos_wk1[[i]]<-length(intersect(int_wk1_up[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_pos_wk2[[i]]<-length(intersect(int_wk2_up[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_pos_wk3[[i]]<-length(intersect(int_wk3_up[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_pos_mon8[[i]]<-length(intersect(int_mon8_up[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_pos_wk1[[i]]<-length(intersect(int_wk1_down[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_pos_wk2[[i]]<-length(intersect(int_wk2_down[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_pos_wk3[[i]]<-length(intersect(int_wk3_down[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_pos_mon8[[i]]<-length(intersect(int_mon8_down[[i]]$gene,lung_phe_gene_pos[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_neg_wk1[[i]]<-length(intersect(int_wk1_up[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_neg_wk2[[i]]<-length(intersect(int_wk2_up[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_neg_wk3[[i]]<-length(intersect(int_wk3_up[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_neg_mon8[[i]]<-length(intersect(int_mon8_up[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_neg_wk1[[i]]<-length(intersect(int_wk1_down[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_neg_wk2[[i]]<-length(intersect(int_wk2_down[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_neg_wk3[[i]]<-length(intersect(int_wk3_down[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_down_phe_neg_mon8[[i]]<-length(intersect(int_mon8_down[[i]]$gene,lung_phe_gene_neg[[i]]$geneID))%>%as.data.frame()
+    int_reinforcing_up_phe_pos_wk1[[i]]$'time'<-'wk1+'
+    int_reinforcing_up_phe_pos_wk2[[i]]$'time'<-'wk2+'
+    int_reinforcing_up_phe_pos_wk3[[i]]$'time'<-'wk3+'
+    int_reinforcing_up_phe_pos_mon8[[i]]$'time'<-'mon8+'
+    int_reinforcing_down_phe_pos_wk1[[i]]$'time'<-'wk1-'
+    int_reinforcing_down_phe_pos_wk2[[i]]$'time'<-'wk2-'
+    int_reinforcing_down_phe_pos_wk3[[i]]$'time'<-'wk3-'
+    int_reinforcing_down_phe_pos_mon8[[i]]$'time'<-'mon8-'
+    int_reinforcing_up_phe_neg_wk1[[i]]$'time'<-'wk1+'
+    int_reinforcing_up_phe_neg_wk2[[i]]$'time'<-'wk2+'
+    int_reinforcing_up_phe_neg_wk3[[i]]$'time'<-'wk3+'
+    int_reinforcing_up_phe_neg_mon8[[i]]$'time'<-'mon8+'
+    int_reinforcing_down_phe_neg_wk1[[i]]$'time'<-'wk1-'
+    int_reinforcing_down_phe_neg_wk2[[i]]$'time'<-'wk2-'
+    int_reinforcing_down_phe_neg_wk3[[i]]$'time'<-'wk3-'
+    int_reinforcing_down_phe_neg_mon8[[i]]$'time'<-'mon8-'
+    int_reinforcing_up_phe_pos_wk1[[i]]$'phe'<-'positive'
+    int_reinforcing_up_phe_pos_wk2[[i]]$'phe'<-'positive'
+    int_reinforcing_up_phe_pos_wk3[[i]]$'phe'<-'positive'
+    int_reinforcing_up_phe_pos_mon8[[i]]$'phe'<-'positive'
+    int_reinforcing_down_phe_pos_wk1[[i]]$'phe'<-'positive'
+    int_reinforcing_down_phe_pos_wk2[[i]]$'phe'<-'positive'
+    int_reinforcing_down_phe_pos_wk3[[i]]$'phe'<-'positive'
+    int_reinforcing_down_phe_pos_mon8[[i]]$'phe'<-'positive'
+    int_reinforcing_up_phe_neg_wk1[[i]]$'phe'<-'negative'
+    int_reinforcing_up_phe_neg_wk2[[i]]$'phe'<-'negative'
+    int_reinforcing_up_phe_neg_wk3[[i]]$'phe'<-'negative'
+    int_reinforcing_up_phe_neg_mon8[[i]]$'phe'<-'negative'
+    int_reinforcing_down_phe_neg_wk1[[i]]$'phe'<-'negative'
+    int_reinforcing_down_phe_neg_wk2[[i]]$'phe'<-'negative'
+    int_reinforcing_down_phe_neg_wk3[[i]]$'phe'<-'negative'
+    int_reinforcing_down_phe_neg_mon8[[i]]$'phe'<-'negative'
+    reinforcing_phe[[i]]<-rbind(int_reinforcing_up_phe_pos_wk1[[i]],int_reinforcing_up_phe_pos_wk2[[i]],int_reinforcing_up_phe_pos_wk3[[i]],int_reinforcing_up_phe_pos_mon8[[i]],
+                                int_reinforcing_down_phe_pos_wk1[[i]],int_reinforcing_down_phe_pos_wk2[[i]],int_reinforcing_down_phe_pos_wk3[[i]],int_reinforcing_down_phe_pos_mon8[[i]],
+                                int_reinforcing_up_phe_neg_wk1[[i]],int_reinforcing_up_phe_neg_wk2[[i]],int_reinforcing_up_phe_neg_wk3[[i]],int_reinforcing_up_phe_neg_mon8[[i]],
+                                int_reinforcing_down_phe_neg_wk1[[i]],int_reinforcing_down_phe_neg_wk2[[i]],int_reinforcing_down_phe_neg_wk3[[i]],int_reinforcing_down_phe_neg_mon8[[i]])
+    colnames(reinforcing_phe[[i]])<-c('num','time','phe')
+    p[[i]]<-ggplot(reinforcing_phe[[i]], aes(x = time, y = num, fill = phe)) +
+      geom_col(width = 0.55, position = position_stack(reverse = TRUE), show.legend = TRUE) +
+      scale_x_discrete(limits = c("wk1+", "wk1-", 3,
+                                  "wk2+", "wk2-", 6,
+                                  "wk3+", "wk3-", 9,
+                                  "mon8+", "mon8-"),
+                       labels = c("wk1+", "wk1-", "",
+                                  "wk2+", "wk2-", "",
+                                  "wk3+", "wk3-", "",
+                                  "mon8+", "mon8-"
+                       )) +
+      scale_fill_manual(values = c( "dodgerblue3","firebrick1")) +ylim(0,2)+labs(x = 'Time', y = 'num', title = df[[i]]) +
+      theme_classic(base_size = 14)+
+      theme(plot.subtitle = element_text(face = "bold", size = 18, hjust = -0.2, vjust = -3),
+            axis.line = element_line(size = 0.3),
+            axis.ticks = element_line(size = 0.3),
+            axis.ticks.length = unit(0.2, "cm"),
+            axis.text.x = element_text(colour = "black",angle = 45, hjust = 0.97, vjust = 0.95))
+  }, error = function(e) {
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+p[[1]]+p[[2]]+p[[3]]+p[[4]]+p[[5]]+p[[6]]+p[[7]]+p[[8]]+p[[9]]+p[[10]]+p[[11]]+p[[12]]+p[[13]]+p[[14]]+p[[15]]+p[[16]]+p[[17]]+p[[18]]+p[[19]]+p[[20]]+p[[21]]
+
+
+reinforcing_num_up_wk1<-list()
+reinforcing_num_up_wk2<-list()
+reinforcing_num_up_wk3<-list()
+reinforcing_num_up_mon8<-list()
+reinforcing_num_down_wk1<-list()
+reinforcing_num_down_wk2<-list()
+reinforcing_num_down_wk3<-list()
+reinforcing_num_down_mon8<-list()
+reversing_num_up_wk1<-list()
+reversing_num_up_wk2<-list()
+reversing_num_up_wk3<-list()
+reversing_num_up_mon8<-list()
+reversing_num_down_wk1<-list()
+reversing_num_down_wk2<-list()
+reversing_num_down_wk3<-list()
+reversing_num_down_mon8<-list()
+num_wk1<-list()
+num_wk2<-list()
+num_wk3<-list()
+num_mon8<-list()
+wk1_num<-list()
+wk2_num<-list()
+wk3_num<-list()
+mon8_num<-list()
+for (i in 1:length(df)) {
+  reinforcing_num_up_wk1[[i]]<-length(intersect(int_wk1_up[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_up_wk2[[i]]<-length(intersect(int_wk2_up[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_up_wk3[[i]]<-length(intersect(int_wk3_up[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_up_mon8[[i]]<-length(intersect(int_mon8_up[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_down_wk1[[i]]<-length(intersect(int_wk1_down[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_down_wk2[[i]]<-length(intersect(int_wk2_down[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_down_wk3[[i]]<-length(intersect(int_wk3_down[[i]]$gene,top5$symbol))%>%data.frame()
+  reinforcing_num_down_mon8[[i]]<-length(intersect(int_mon8_down[[i]]$gene,top5$symbol))%>%data.frame()
+  reversing_num_up_wk1[[i]]<-length(intersect(int_wk1_up_down[[i]],top5$symbol))%>%data.frame()
+  reversing_num_up_wk2[[i]]<-length(intersect(int_wk2_up_down[[i]],top5$symbol))%>%data.frame()
+  reversing_num_up_wk3[[i]]<-length(intersect(int_wk3_up_down[[i]],top5$symbol))%>%data.frame()
+  reversing_num_up_mon8[[i]]<-length(intersect(int_mon8_up_down[[i]],top5$symbol))%>%data.frame()
+  reversing_num_down_wk1[[i]]<-length(intersect(int_wk1_down_up[[i]],top5$symbol))%>%data.frame()
+  reversing_num_down_wk2[[i]]<-length(intersect(int_wk2_down_up[[i]],top5$symbol))%>%data.frame()
+  reversing_num_down_wk3[[i]]<-length(intersect(int_wk3_down_up[[i]],top5$symbol))%>%data.frame()
+  reversing_num_down_mon8[[i]]<-length(intersect(int_mon8_down_up[[i]],top5$symbol))%>%data.frame()
+  reinforcing_num_up_wk1[[i]]$group<-'reinforcing_up'
+  reinforcing_num_up_wk2[[i]]$group<-'reinforcing_up'
+  reinforcing_num_up_wk3[[i]]$group<-'reinforcing_up'
+  reinforcing_num_up_mon8[[i]]$group<-'reinforcing_up'
+  reinforcing_num_down_wk1[[i]]$group<-'reinforcing_down'
+  reinforcing_num_down_wk2[[i]]$group<-'reinforcing_down'
+  reinforcing_num_down_wk3[[i]]$group<-'reinforcing_down'
+  reinforcing_num_down_mon8[[i]]$group<-'reinforcing_down'
+  reversing_num_up_wk1[[i]]$group<-'reversing_up'
+  reversing_num_up_wk2[[i]]$group<-'reversing_up'
+  reversing_num_up_wk3[[i]]$group<-'reversing_up'
+  reversing_num_up_mon8[[i]]$group<-'reversing_up'
+  reversing_num_down_wk1[[i]]$group<-'reversing_down'
+  reversing_num_down_wk2[[i]]$group<-'reversing_down'
+  reversing_num_down_wk3[[i]]$group<-'reversing_down'
+  reversing_num_down_mon8[[i]]$group<-'reversing_down'
+  reinforcing_num_up_wk1[[i]]$cell<-df[[i]]
+  reinforcing_num_up_wk2[[i]]$cell<-df[[i]]
+  reinforcing_num_up_wk3[[i]]$cell<-df[[i]]
+  reinforcing_num_up_mon8[[i]]$cell<-df[[i]]
+  reinforcing_num_down_wk1[[i]]$cell<-df[[i]]
+  reinforcing_num_down_wk2[[i]]$cell<-df[[i]]
+  reinforcing_num_down_wk3[[i]]$cell<-df[[i]]
+  reinforcing_num_down_mon8[[i]]$cell<-df[[i]]
+  reversing_num_up_wk1[[i]]$cell<-df[[i]]
+  reversing_num_up_wk2[[i]]$cell<-df[[i]]
+  reversing_num_up_wk3[[i]]$cell<-df[[i]]
+  reversing_num_up_mon8[[i]]$cell<-df[[i]]
+  reversing_num_down_wk1[[i]]$cell<-df[[i]]
+  reversing_num_down_wk2[[i]]$cell<-df[[i]]
+  reversing_num_down_wk3[[i]]$cell<-df[[i]]
+  reversing_num_down_mon8[[i]]$cell<-df[[i]]
+  num_wk1[[i]]<-rbind(reinforcing_num_up_wk1[[i]],reinforcing_num_down_wk1[[i]],reversing_num_up_wk1[[i]],reversing_num_down_wk1[[i]])
+  num_wk2[[i]]<-rbind(reinforcing_num_up_wk2[[i]],reinforcing_num_down_wk2[[i]],reversing_num_up_wk2[[i]],reversing_num_down_wk2[[i]])
+  num_wk3[[i]]<-rbind(reinforcing_num_up_wk3[[i]],reinforcing_num_down_wk3[[i]],reversing_num_up_wk3[[i]],reversing_num_down_wk3[[i]])
+  num_mon8[[i]]<-rbind(reinforcing_num_up_mon8[[i]],reinforcing_num_down_mon8[[i]],reversing_num_up_mon8[[i]],reversing_num_down_mon8[[i]])
+}
+
+wk1_num<-rbind(num_wk1[[1]],num_wk1[[2]],num_wk1[[3]],num_wk1[[4]],num_wk1[[5]],num_wk1[[6]],num_wk1[[7]],num_wk1[[8]],num_wk1[[9]],num_wk1[[10]],num_wk1[[11]],num_wk1[[12]],num_wk1[[13]],num_wk1[[14]],num_wk1[[15]],num_wk1[[16]],num_wk1[[17]])
+wk2_num<-rbind(num_wk2[[1]],num_wk2[[2]],num_wk2[[3]],num_wk2[[4]],num_wk2[[5]],num_wk2[[6]],num_wk2[[7]],num_wk2[[8]],num_wk2[[9]],num_wk2[[10]],num_wk2[[11]],num_wk2[[12]],num_wk2[[13]],num_wk2[[14]],num_wk2[[15]],num_wk2[[16]],num_wk2[[17]])
+wk3_num<-rbind(num_wk3[[1]],num_wk3[[2]],num_wk3[[3]],num_wk3[[4]],num_wk3[[5]],num_wk3[[6]],num_wk3[[7]],num_wk3[[8]],num_wk3[[9]],num_wk3[[10]],num_wk3[[11]],num_wk3[[12]],num_wk3[[13]],num_wk3[[14]],num_wk3[[15]],num_wk3[[16]],num_wk3[[17]])
+mon8_num<-rbind(num_mon8[[1]],num_mon8[[2]],num_mon8[[3]],num_mon8[[4]],num_mon8[[5]],num_mon8[[6]],num_mon8[[7]],num_mon8[[8]],num_mon8[[9]],num_mon8[[10]],num_mon8[[11]],num_mon8[[12]],num_mon8[[13]],num_mon8[[14]],num_mon8[[15]],num_mon8[[16]])
+
+colnames(wk1_num)<-c('num','group','cell')
+colnames(wk2_num)<-c('num','group','cell')
+colnames(wk3_num)<-c('num','group','cell')
+colnames(mon8_num)<-c('num','group','cell')
+
+num_all<-rbind(wk1_num,wk2_num,wk3_num,mon8_num)
+df_avg <- num_all %>%
+  group_by(cell, group) %>%
+  summarise(avg_num = mean(num)) %>%
+  ungroup()
+df_sum <- df_avg %>%
+  group_by(cell) %>%
+  summarise(total_avg = sum(avg_num)) %>%
+  arrange(desc(total_avg))
+
+mon8_num$cell <- factor(mon8_num$cell, levels = df_sum$cell)
+
+ggplot(mon8_num,aes(cell, num),position="stack") +
+  geom_bar(aes(fill = group), stat = "identity",size=0.4,
+           position = "fill")+
+  scale_fill_manual(values=c("#56B4E9",'#ABD9E9', '#BC80BD', '#FCCDE5'))+theme_bw()+
+  theme(
+    panel.grid = element_blank(),
+    axis.title = element_blank(),
+    axis.ticks = element_blank(),
+    axis.text.x.bottom = element_text(angle = 45,vjust = 1,hjust = 1,size = 10,color="black"),
+  )
+
+
+#############################################################################
+###Go KEGG
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(clusterProfiler)
+library(DOSE)
+library(org.Hs.eg.db)
+library(aPEAR)
+library(stringr)
+
+###reversing
+gene<-list()
+reversing_go<-list()
+reversing_KEGG<-list()
+all_reversing<-list()
+all_reversing_go<-data.frame()
+all_reversing_kegg<-data.frame()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    all_reversing[[i]] <-rbind(reversing_wk1[[i]],reversing_wk2[[i]],reversing_wk3[[i]],reversing_mon8[[i]])
+    gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                          keys = all_reversing[[i]]$gene,
+                                                          columns = 'ENTREZID',
+                                                          keytype = 'SYMBOL')[,2]))
+    reversing_go[[i]] <- enrichGO(gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    reversing_go[[i]] <- filter(reversing_go[[i]], pvalue< 0.05)
+    reversing_go[[i]]=DOSE::setReadable(reversing_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    reversing_go[[i]]@result$cell<-df[[i]]
+    reversing_KEGG[[i]] <- enrichKEGG(gene[[i]])
+    reversing_KEGG[[i]] <- filter(reversing_KEGG[[i]], pvalue< 0.05)
+    reversing_KEGG[[i]]@result$cell<-df[[i]]
+    all_reversing_go<-rbind(all_reversing_go,reversing_go[[i]]@result)
+    all_reversing_kegg<-rbind(all_reversing_kegg,reversing_KEGG[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+all_reversing_go_table<-as.data.frame(table(all_reversing_go$Description))
+all_reversing_kegg_table<-as.data.frame(table(all_reversing_kegg$Description))
+
+gene<-list()
+reinforcing_go<-list()
+reinforcing_KEGG<-list()
+all_reinforcing<-list()
+all_reinforcing_go<-data.frame()
+all_reinforcing_kegg<-data.frame()
+for (i in 1:21){
+  tryCatch({
+    # 尝试执行可能会失败的代码
+    all_reinforcing[[i]] <-rbind(reinforcing_wk1[[i]],reinforcing_wk2[[i]],reinforcing_wk3[[i]],reinforcing_mon8[[i]])
+    gene[[i]] =as.character(na.omit(AnnotationDbi::select(org.Hs.eg.db,
+                                                          keys = all_reinforcing[[i]]$gene,
+                                                          columns = 'ENTREZID',
+                                                          keytype = 'SYMBOL')[,2]))
+    reinforcing_go[[i]] <- enrichGO(gene[[i]], OrgDb = "org.Hs.eg.db", ont="BP")
+    reinforcing_go[[i]] <- filter(reinforcing_go[[i]], pvalue< 0.05)
+    reinforcing_go[[i]]=DOSE::setReadable(reinforcing_go[[i]], OrgDb='org.Hs.eg.db',keyType='ENTREZID')
+    reinforcing_go[[i]]@result$cell<-df[[i]]
+    reinforcing_KEGG[[i]] <- enrichKEGG(gene[[i]])
+    reinforcing_KEGG[[i]] <- filter(reinforcing_KEGG[[i]], pvalue< 0.05)
+    reinforcing_KEGG[[i]]@result$cell<-df[[i]]
+    all_reinforcing_go<-rbind(all_reinforcing_go,reinforcing_go[[i]]@result)
+    all_reinforcing_kegg<-rbind(all_reinforcing_kegg,reinforcing_KEGG[[i]]@result)
+  }, error = function(e) {
+    # 如果发生错误，这里的代码将会被执行
+    # 你可以决定在这里执行什么操作，比如打印一个警告信息
+    warning(paste("Warning: Iteration", i, "caused an error and was skipped."))
+  })
+}
+
+
+
+all_reinforcing_go_table<-as.data.frame(table(all_reinforcing_go$Description))
+all_reinforcing_kegg_table<-as.data.frame(table(all_reinforcing_kegg$Description))
+
+write.csv(all_reinforcing_go,file = 'all_reinforcing_go.csv')
+write.csv(all_reinforcing_kegg,file = 'all_reinforcing_kegge.csv')
+write.csv(all_reversing_go,file = 'all_reversing_go.csv')
+write.csv(all_reversing_kegg,file = 'all_reversing_kegg.csv')
+write.csv(all_reinforcing_go_table,file = 'all_reinforcing_go_table.csv')
+write.csv(all_reinforcing_kegg_table,file = 'all_reinforcing_kegg_table.csv')
+write.csv(all_reversing_go_table,file = 'all_reversing_go_table.csv')
+write.csv(all_reversing_kegg_table,file = 'all_reversing_kegg_table.csv')
+
+
+
+ggplot(go,aes(Count,Description))+geom_point(aes(size=Count,color=-1*log10(pvalue)))+scale_color_gradient(low="blue",high="red")+theme_bw()
+
+
+rev3 <- pairwise_termsim(reversing_go[[3]])
+rein3 <- pairwise_termsim(reinforcing_go[[3]])
+
+treeplot(rev3,showCategory=50,nCluster = 6)
+treeplot(rein3,showCategory=50,nCluster = 6)
+
+
+
+
+
+
+
